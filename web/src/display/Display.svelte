@@ -34,14 +34,14 @@
 <style>
   /* One layout for every screen size (user, 2026-11-23). Beside the lane, rows are
      now playing : GIF + personal best : counter = 2 : 3 : 2, and the GIF and personal
-     best split their row 1 : 3. */
+     best split their row 2 : 5. */
   .display {
     height: 100vh;
     display: grid;
     gap: 18px;
     padding: 18px;
     position: relative;
-    grid-template-columns: auto minmax(0, 1fr) minmax(0, 3fr);
+    grid-template-columns: auto minmax(0, 2fr) minmax(0, 5fr);
     grid-template-rows: minmax(0, 2fr) minmax(0, 3fr) minmax(0, 2fr) auto;
     grid-template-areas:
       "lane now now"
@@ -50,7 +50,7 @@
       "recent recent recent";
   }
   .display.p2 {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 3fr) auto;
+    grid-template-columns: minmax(0, 2fr) minmax(0, 5fr) auto;
     grid-template-areas:
       "now now lane"
       "gif pb lane"

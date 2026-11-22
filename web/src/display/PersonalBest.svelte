@@ -13,7 +13,7 @@
 </script>
 
 <!--
-  Stack (user, 2026-11-23): clear type (small) / grade (large) / score (medium) with the
+  Stack (user, 2026-11-23): "Personal best" header / clear type (small) / grade (large) / score (medium) with the
   border difference beside it (small) / misses and last played (small).
 -->
 <div class="panel"><div class="inner">
@@ -21,10 +21,8 @@
     <p class="label">Personal best</p>
     <p class="empty">{$nowPlaying ? "Not played yet" : "No song selected"}</p>
   {:else}
-    <p class="clear">
-      <span style:color={LAMP_VAR[$personalBest.lamp] ?? "var(--text)"}>{$personalBest.lamp}</span>
-      <span class="label">Personal best</span>
-    </p>
+    <p class="label">Personal best</p>
+    <p class="clear" style:color={LAMP_VAR[$personalBest.lamp] ?? "var(--text)"}>{$personalBest.lamp}</p>
     <p class="grade">{grade ?? "—"}</p>
     <p class="score">{$personalBest.score}{#if border}<span class="diff">{border.label}</span>{/if}</p>
     <div class="meta">
@@ -41,8 +39,7 @@
   p { margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .label { color: var(--muted); font-size: clamp(0.8rem, 5.5cqh, 1rem); font-weight: 400; font-stretch: 112%; }
   .empty { margin-top: 0.3em; font-size: clamp(1.1rem, 10cqh, 1.8rem); color: var(--muted); }
-  .clear { display: flex; justify-content: space-between; align-items: baseline; gap: 12px;
-    font-size: clamp(0.85rem, 7cqh, 1.25rem); font-weight: 600; font-stretch: 105%; }
+  .clear { font-size: clamp(0.85rem, 7cqh, 1.25rem); font-weight: 600; font-stretch: 105%; }
   .grade { font-size: clamp(2.2rem, min(30cqh, 14cqi), 6rem); font-weight: 700; font-stretch: 90%; line-height: 1; }
   .score { font-size: clamp(1.3rem, min(15cqh, 7cqi), 3rem); font-weight: 600; font-stretch: 88%; line-height: 1.1;
     font-variant-numeric: tabular-nums; }
