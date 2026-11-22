@@ -76,7 +76,10 @@
     grid-template-rows: minmax(0, 0.9fr) minmax(0, 1fr) auto;
     grid-template-areas: "gif gif" "lane counter" "cards cards";
   }
-  .portrait.p2 { grid-template-areas: "gif gif" "counter lane" "cards cards"; }
+  .portrait.p2 {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas: "gif gif" "counter lane" "cards cards";
+  }
 
   .lane-area { grid-area: lane; aspect-ratio: 685 / 1080; height: 100%; min-height: 0; }
   .gif-area { grid-area: gif; min-height: 0; display: grid; place-items: center; }
