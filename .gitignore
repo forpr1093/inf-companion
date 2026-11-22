@@ -1,0 +1,16 @@
+# Third-party data: never commit (see CLAUDE.md hard rules)
+data/
+tables/
+skins/*
+!skins/.gitkeep
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+
+# Web
+web/node_modules/
+
+# macOS
+.DS_Store

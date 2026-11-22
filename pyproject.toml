@@ -1,0 +1,29 @@
+[project]
+name = "inf-companion"
+version = "0.1.0"
+description = "Local companion app for beatmania IIDX INFINITAS"
+requires-python = ">=3.12"
+dependencies = [
+    "starlette",
+    "uvicorn",
+    "websockets",
+    "pysdl2",
+    "pysdl2-dll",
+]
+
+[project.scripts]
+inf-companion = "inf_companion.cli:main"
+
+[dependency-groups]
+dev = ["pytest", "httpx"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["inf_companion"]
+artifacts = ["inf_companion/web_dist/**"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
