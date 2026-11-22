@@ -28,12 +28,14 @@
 </div></div>
 
 <style>
+  .recent { height: 100%; }
   .recent .inner { overflow: hidden; }
   .kicker { margin: 0 0 6px; color: var(--muted); font-size: 0.95rem; font-stretch: 112%; }
   .empty { margin: 0; font-size: 1.2rem; color: var(--muted); }
   table { width: 100%; border-collapse: collapse; font-size: 1.15rem; }
   tr + tr td { border-top: 1px solid var(--line); }
-  td { padding: 6px 10px; white-space: nowrap; }
+  tr { height: 2.5rem; }
+  td { padding: 0 10px; white-space: nowrap; }
   .diff { width: 1%; }
   .diff span {
     display: inline-block; min-width: 9.5em; text-align: center;

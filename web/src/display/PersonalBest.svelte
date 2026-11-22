@@ -30,6 +30,7 @@
 </div></div>
 
 <style>
+  .panel { height: 100%; }
   .kicker { margin: 0 0 6px; color: var(--muted); font-size: 0.95rem; font-stretch: 112%; }
   .empty { margin: 0; font-size: 1.35rem; color: var(--muted); }
   .best { display: flex; align-items: baseline; flex-wrap: wrap; gap: 6px 22px; }

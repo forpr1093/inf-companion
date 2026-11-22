@@ -22,6 +22,7 @@
 </div></div>
 
 <style>
+  .panel { height: 100%; }
   .row { display: flex; justify-content: space-between; align-items: center; gap: 16px; }
   .tag {
     font-size: 0.95rem; font-weight: 600; font-stretch: 110%; letter-spacing: 0.04em;

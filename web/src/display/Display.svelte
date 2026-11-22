@@ -55,11 +55,12 @@
       "recent recent recent";
   }
   .lane-area { grid-area: lane; height: 100%; aspect-ratio: 0.62; min-height: 0; }
-  .now { grid-area: now; min-width: 0; }
-  .pb { grid-area: pb; min-width: 0; }
+  /* Fixed heights: the layout must not move when data arrives or goes away. */
+  .now { grid-area: now; min-width: 0; height: 8.5rem; }
+  .pb { grid-area: pb; min-width: 0; height: 8rem; }
   .counter-area { grid-area: counter; min-height: 0; min-width: 0; display: grid; place-items: center; }
   .gif-area { grid-area: gif; height: 100%; aspect-ratio: 1; min-height: 0; }
-  .recent { grid-area: recent; min-height: 0; min-width: 0; }
+  .recent { grid-area: recent; min-height: 0; min-width: 0; height: calc(36px + 2rem + 6 * 2.5rem); }
 
   .placeholder {
     width: 100%; height: 100%;
