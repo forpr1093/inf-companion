@@ -39,7 +39,8 @@
     padding: 18px;
     position: relative;
     grid-template-columns: auto minmax(0, 1fr) auto;
-    grid-template-rows: auto auto minmax(0, 1fr) auto;
+    /* Beside the lane: now playing, personal best, counter + GIF at 3 : 3 : 2. */
+    grid-template-rows: minmax(0, 3fr) minmax(0, 3fr) minmax(0, 2fr) auto;
     grid-template-areas:
       "lane now now"
       "lane pb pb"
@@ -55,9 +56,9 @@
       "recent recent recent";
   }
   .lane-area { grid-area: lane; height: 100%; aspect-ratio: 0.62; min-height: 0; }
-  /* Fixed heights: the layout must not move when data arrives or goes away. */
-  .now { grid-area: now; min-width: 0; height: 8.5rem; }
-  .pb { grid-area: pb; min-width: 0; height: 8rem; }
+  /* Row heights come from fr ratios, never from content, so data never moves the layout. */
+  .now { grid-area: now; min-width: 0; min-height: 0; container-type: size; }
+  .pb { grid-area: pb; min-width: 0; min-height: 0; container-type: size; }
   .counter-area { grid-area: counter; min-height: 0; min-width: 0; display: grid; place-items: center; overflow: hidden; container-type: size; }
   .gif-area { grid-area: gif; height: min(100%, 22vw); aspect-ratio: 1; min-height: 0; align-self: center; }
   .recent { grid-area: recent; min-height: 0; min-width: 0; height: calc(36px + 2rem + 6 * 2.5rem); }
@@ -67,7 +68,8 @@
   @media (max-width: 1440px) {
     .display {
       grid-template-columns: auto minmax(0, 1fr) minmax(0, 1fr);
-      grid-template-rows: auto auto minmax(0, 1fr) minmax(0, 1fr) auto;
+      /* now playing, personal best, GIF, counter at 3 : 3 : 1 : 1 */
+      grid-template-rows: minmax(0, 3fr) minmax(0, 3fr) minmax(0, 1fr) minmax(0, 1fr) auto;
       grid-template-areas:
         "lane now now"
         "lane pb pb"

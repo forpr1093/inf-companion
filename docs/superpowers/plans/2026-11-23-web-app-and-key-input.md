@@ -908,6 +908,12 @@ test("panel events land in stores", () => { /* applyEvent chart / personal_best 
 - **Review Focus #5** (skin path escape) no longer applies, since the route is gone. `test_skin_routes_are_gone` checks it stays gone.
 - **Narrow windows (≤ 1440 px wide):** 5 rows, with the GIF row above the counter row, both spanning columns 2–3. The two rows share the height. The counter area is a CSS size container, and the counter's box size is `clamp(20px, min(9cqi, 27cqh), 92px)`.
 
+## Revision 4 (user, 2026-11-23)
+
+- **Row ratios beside the lane:** 3 : 3 : 2 (now playing, personal best, counter + GIF) in the 4-row layout, and 3 : 3 : 1 : 1 in the 5-row layout. Recent plays stays a fixed six-row height.
+- **Panels fill their rows.** The `now` and `pb` cells are CSS size containers, and panel text scales with `cqh` / `cqi`.
+- **Artist:** `Chart` gains `artist: string | null`. Now playing shows it under the title. Plan 3's `chart` event must include it.
+
 ## Roadmap: Plans 2 and 3 (written after this plan ships)
 
 Each gets its own writing-plans pass, because each depends on results that don't exist yet: spike numbers and fixture screenshots.

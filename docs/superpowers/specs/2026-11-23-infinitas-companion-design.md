@@ -215,11 +215,14 @@ Windows gaming PC                                      Second monitor
   ```
 
   For 2P the lane moves to the right column and the rest shifts left (builder's call).
-  The GIF is a square that matches the counter's height.
+  The GIF is a square that matches the counter's height. Row heights beside the lane are
+  ratios (user, 2026-11-23): now playing : personal best : counter row = **3 : 3 : 2**.
+  Recent plays has a fixed height (six rows). Data never changes the layout.
 
   **Narrow windows (≤ 1440 px wide):** 5 rows. The GIF gets its own row above the
-  counter, and both span columns 2–3 (user, 2026-11-23). The GIF and counter rows share
-  the height equally, and the counter scales to fit its cell.
+  counter, and both span columns 2–3 (user, 2026-11-23). Row heights are now playing :
+  personal best : GIF : counter = **3 : 3 : 1 : 1**, and the counter scales to fit its
+  cell.
 - **Lane:** scratch plus 7 keys, drawn with PixiJS (WebGL). Each `key_down` spawns a
   note that floats up from the judge line and fades, and the note grows while the key
   is held. The scratch sits on the left for 1P and on the right for 2P. Notes appear
@@ -243,7 +246,7 @@ Windows gaming PC                                      Second monitor
   lasts. Frames are decoded (e.g. `gifuct-js`) and drawn on a canvas. Playback speed is
   `bpm_max × beats-per-loop` relative to the GIF's own duration, and it changes when
   the selected chart changes.
-- **Now playing:** title, difficulty and level (difficulty colour), and BPM. Until a
+- **Now playing:** title, artist, difficulty and level (difficulty colour), and BPM. Until a
   song is recognised it shows "No song selected" and the manual BPM.
 - **Personal best** (user, 2026-11-23): for the current chart, the higher of the
   official CSV import and the user's own recorded plays. It shows EX score, DJ level

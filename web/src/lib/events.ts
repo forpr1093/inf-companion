@@ -30,7 +30,7 @@ export const DEFAULTS: Settings = {
 
 export type Difficulty = "BEGINNER" | "NORMAL" | "HYPER" | "ANOTHER" | "LEGGENDARIA";
 
-export interface Chart { title: string; difficulty: Difficulty; level: number; bpm: number | null; notes: number | null; }
+export interface Chart { title: string; artist: string | null; difficulty: Difficulty; level: number; bpm: number | null; notes: number | null; }
 
 export interface PersonalBest {
   score: number; notes: number | null; lamp: string; miss_count: number | null;

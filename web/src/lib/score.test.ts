@@ -28,9 +28,10 @@ test("difficulty short names", () => {
 });
 
 test("panel events land in stores", () => {
-  const chart = { title: "Sample", difficulty: "ANOTHER" as const, level: 12, bpm: 175, notes: 1500 };
+  const chart = { title: "Sample", artist: "Someone", difficulty: "ANOTHER" as const, level: 12, bpm: 175, notes: 1500 };
   applyEvent({ type: "chart", at: 0, chart });
   expect(get(nowPlaying)).toEqual(chart);
+  expect(get(nowPlaying)!.artist).toBe("Someone");
   applyEvent({ type: "personal_best", at: 0, best: null });
   expect(get(personalBest)).toBeNull();
   const play = { title: "Sample", difficulty: "HYPER" as const, level: 10, score: 1800, notes: 1000, option: "RANDOM", played_at: "2026-11-23T10:00:00Z" };

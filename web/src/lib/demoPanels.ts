@@ -3,7 +3,7 @@ import { nowPlaying, personalBest, recentPlays } from "./stores";
 import type { RecentPlay } from "./events";
 
 export function demoPanels(): void {
-  nowPlaying.set({ title: "Night Circuit", difficulty: "ANOTHER", level: 12, bpm: 174, notes: 1650 });
+  nowPlaying.set({ title: "Night Circuit", artist: "Halcyon Drive", difficulty: "ANOTHER", level: 12, bpm: 174, notes: 1650 });
   personalBest.set({ score: 2817, notes: 1650, lamp: "HARD CLEAR", miss_count: 14, last_played: "2026-11-20", source: "official" });
   const plays: RecentPlay[] = [
     { title: "Night Circuit", difficulty: "ANOTHER", level: 12, score: 2743, notes: 1650, option: "RANDOM", played_at: "2026-11-23T21:40:00" },
