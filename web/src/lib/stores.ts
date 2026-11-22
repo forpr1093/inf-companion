@@ -77,3 +77,13 @@ export async function patchSettings(patch: Partial<Settings>): Promise<void> {
 }
 
 export { get };
+
+/** Upload a GIF (raw body). Throws with the server's message on 4xx. */
+export async function uploadGif(file: File): Promise<void> {
+  const r = await fetch("/api/gif", { method: "PUT", headers: { "content-type": "image/gif" }, body: file });
+  if (!r.ok) {
+    let msg = `Upload failed (HTTP ${r.status})`;
+    try { msg = (await r.json()).error ?? msg; } catch { /* keep default */ }
+    throw new Error(msg);
+  }
+}

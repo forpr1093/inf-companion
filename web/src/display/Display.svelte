@@ -28,6 +28,7 @@
   <section class="counter-area" aria-label="Button counter"><Counter /></section>
   <section class="gif-area" aria-label="Loop"><div class="placeholder">GIF</div></section>
   <section class="recent"><RecentPlays /></section>
+  <a class="to-settings" href="#/settings" aria-label="Settings">Settings</a>
   <span class="conn" data-status={$status} title="Server connection: {$status}" aria-label="Server connection: {$status}"></span>
 </div>
 
@@ -70,6 +71,11 @@
     border: 1px dashed var(--line); color: var(--muted);
     display: grid; place-items: center;
   }
+  .to-settings {
+    position: absolute; right: 20px; bottom: 0; font-size: 0.75rem; color: var(--muted);
+    text-decoration: none; opacity: 0.4;
+  }
+  .to-settings:hover, .to-settings:focus-visible { opacity: 1; color: var(--text); }
   .conn {
     position: absolute; right: 6px; bottom: 6px;
     width: 8px; height: 8px; border-radius: 50%;

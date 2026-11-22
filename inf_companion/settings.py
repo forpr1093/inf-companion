@@ -11,6 +11,14 @@ DEFAULT_SETTINGS: dict[str, Any] = {
 
 
 
+_MESSAGES = {
+    "side": "Side must be 1P or 2P.",
+    "manual_bpm": "BPM must be between 30 and 999.",
+    "beats_per_loop": "Beats per loop must be a whole number from 1 to 64.",
+    "theme": "Theme must be dark or light.",
+}
+
+
 def _is_number(v: Any) -> bool:
     return isinstance(v, (int, float)) and not isinstance(v, bool)
 
@@ -35,5 +43,5 @@ def validate_settings_patch(patch: dict) -> dict:
         if key not in DEFAULT_SETTINGS:
             raise ValueError(f"unknown setting: {key}")
         if not _check(key, value):
-            raise ValueError(f"invalid value for {key}: {value!r}")
+            raise ValueError(_MESSAGES[key])
     return dict(patch)

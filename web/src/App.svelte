@@ -2,6 +2,7 @@
   import { onMount } from "svelte";
   import "./lib/theme.css";
   import Display from "./display/Display.svelte";
+  import Settings from "./settings/Settings.svelte";
   import { settings, startConnection } from "./lib/stores";
 
   let route = $state(location.hash || "#/");
@@ -19,7 +20,7 @@
 </script>
 
 {#if route.startsWith("#/settings")}
-  <main class="settings-placeholder"><h1>Settings</h1></main>
+  <Settings />
 {:else}
   <Display />
 {/if}

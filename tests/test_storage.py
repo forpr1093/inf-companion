@@ -1,7 +1,7 @@
 import pytest
 
 from inf_companion.input.model import Binding, KeyEvent, RawEvent, Source, TARGETS
-from inf_companion.settings import DEFAULT_SETTINGS
+from inf_companion.settings import DEFAULT_SETTINGS, validate_settings_patch
 from inf_companion.storage.db import BindingsRepo, SettingsRepo, open_db
 
 
@@ -73,3 +73,14 @@ def test_model_basics():
     assert TARGETS == ("1", "2", "3", "4", "5", "6", "7", "S_up", "S_down")
     assert KeyEvent("S", True, 1.0, "up").dir == "up"
     assert RawEvent("g", "button", 0, 1, 0.0).kind == "button"
+
+
+@pytest.mark.parametrize(
+    "patch, message",
+    [({"manual_bpm": 0}, "BPM must be between 30 and 999."),
+     ({"beats_per_loop": 0}, "Beats per loop must be a whole number from 1 to 64."),
+     ({"side": "3P"}, "Side must be 1P or 2P.")],
+)
+def test_validation_messages_are_plain(patch, message):
+    with pytest.raises(ValueError, match=message.replace(".", r"\.")):
+        validate_settings_patch(patch)
