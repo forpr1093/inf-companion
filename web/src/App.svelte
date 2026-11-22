@@ -1,8 +1,15 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import { startConnection, status } from "./lib/stores";
+  import "./lib/theme.css";
+  import Display from "./display/Display.svelte";
+  import { settings, startConnection } from "./lib/stores";
 
   let route = $state(location.hash || "#/");
+
+  $effect(() => {
+    document.documentElement.dataset.theme = $settings.theme;
+  });
+
   onMount(() => {
     startConnection();
     const onHash = () => (route = location.hash || "#/");
@@ -12,8 +19,7 @@
 </script>
 
 {#if route.startsWith("#/settings")}
-  <main><h1>Settings</h1><p>coming soon</p></main>
+  <main class="settings-placeholder"><h1>Settings</h1></main>
 {:else}
-  <main><h1>Display</h1></main>
+  <Display />
 {/if}
-<p class="status" data-status={$status}>{$status}</p>
