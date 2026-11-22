@@ -33,9 +33,20 @@ def main(argv: list[str] | None = None) -> int:
         data_dir=data_dir,
         static_dir=Path(inf_companion.__file__).parent / "web_dist",
     )
+    service = None
+    if not args.no_input:
+        from inf_companion.input.service import InputService
+
+        service = InputService(ctx.bus, ctx.bindings)
+        ctx.input = service
+        service.start()
     print(f"inf-companion {inf_companion.__version__}: data in {data_dir}")
     print(f"open http://{args.host}:{args.port}/")
-    uvicorn.run(create_app(ctx), host=args.host, port=args.port, log_level="warning")
+    try:
+        uvicorn.run(create_app(ctx), host=args.host, port=args.port, log_level="warning")
+    finally:
+        if service is not None:
+            service.stop()
     return 0
 
 
