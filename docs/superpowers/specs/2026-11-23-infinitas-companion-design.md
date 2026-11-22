@@ -13,9 +13,9 @@ built for one player at home, not for streaming:
 
 - **No OBS.** The app captures the INFINITAS window itself.
 - **Looks first.** It shows a 2DX-style lane where a note floats up from each button
-  press, a button counter like the user's reference screenshot, and a looping GIF whose
-  speed follows the song's BPM. The lane is built from a local beatoraja skin's images
-  (WMII_FHD) when one is present.
+  press, a button counter like the user's reference screenshot, a looping GIF whose
+  speed follows the song's BPM, plus now playing, personal best and recent plays. The
+  lane's notes come from a local beatoraja skin (WMII_FHD) when one is present.
 - **Local play records.** It follows game state (song select, play, result) and keeps a
   local history of results, with score differences and graphs.
 
@@ -35,7 +35,7 @@ setup.
 - G5. Read the controller directly, with user-defined button bindings, to drive visual
   effects.
 - G6. A local web page for the second monitor, with lane effects, the button counter,
-  the BPM-synced GIF, and current/last result.
+  the BPM-synced GIF, now playing, personal best and recent plays (§5.8 layout).
 - G7. Develop mostly on macOS. Test and run on the Windows gaming PC.
 
 **Non-goals**
@@ -185,7 +185,7 @@ Windows gaming PC                                      Second monitor
   - `fingerprints`: for user-named unknown titles
   - `settings` and `bindings`
 - Official CSV import (the score export the user already has) fills best-known values
-  for overall stats. Imported rows are marked `source=official`. Import is manual: the
+  for overall stats and the personal best panel (§5.8). Imported rows are marked `source=official`. Import is manual: the
   user picks the file in the page. Automatic download from the official site is out of
   scope for now (user decision, 2026-11-23).
 
@@ -199,12 +199,32 @@ Windows gaming PC                                      Second monitor
 ### 5.8 Web page (`web/`)
 - Vite + Svelte. The build is static files served by the Python app. Node is only
   needed on the Mac.
+- **Layout** (user, 2026-11-23): one landscape grid for the second monitor, 3 columns ×
+  4 rows. Portrait is not designed for.
+
+  ```
+  ┌────────────┬──────────────────────────────┐
+  │            │ Now playing                  │
+  │            ├──────────────────────────────┤
+  │ IIDX lane  │ Personal best                │
+  │ (rows 1–3) ├───────────────────┬──────────┤
+  │            │ Button counter    │ GIF      │
+  ├────────────┴───────────────────┴──────────┤
+  │ Recent plays                              │
+  └───────────────────────────────────────────┘
+  ```
+
+  For 2P the lane moves to the right column and the rest shifts left (builder's call).
+  The GIF is a square that matches the counter's height.
 - **Lane:** scratch plus 7 keys, drawn with PixiJS (WebGL). Each `key_down` spawns a
-  note that floats up and fades, with a press flash on the key. The scratch sits on the
-  left for 1P and on the right for 2P, following the side setting. Notes appear only
-  for presses: there's no chart, and nothing falls. With a skin present, the frame,
-  lane background, notes, key beams, key flashes and turntable come from the skin
-  (§5.9). Without one, they're drawn as plain shapes.
+  note that floats up from the judge line and fades, and the note grows while the key
+  is held. The scratch sits on the left for 1P and on the right for 2P. Notes appear
+  only for presses: there's no chart, and nothing falls.
+  - Only the **notes** come from the skin (§5.9) (user, 2026-11-23). Everything else is
+    drawn as simple shapes in an IIDX style: dark lanes with thin dividers, a red judge
+    line, white and blue key caps, a turntable disc that spins with scratch, and a soft
+    beam on each press.
+  - Without a skin, the notes are drawn as plain bars too.
 - **Button counter** (user, 2026-11-23), like the user's reference screenshot:
   - Keys 2, 4 and 6 are in the top row and 1, 3, 5 and 7 in the bottom row. Each box
     shows how many times that key was pressed.
@@ -220,37 +240,46 @@ Windows gaming PC                                      Second monitor
   lasts. Frames are decoded (e.g. `gifuct-js`) and drawn on a canvas. Playback speed is
   `bpm_max × beats-per-loop` relative to the GIF's own duration, and it changes when
   the selected chart changes.
-- **Current/last chart and result card:** score, score difference vs best, lamp change,
-  miss count.
-- **History:** per-chart list of plays with a score-over-time graph.
+- **Now playing:** title, difficulty and level (difficulty colour), and BPM. Until a
+  song is recognised it shows "No song selected" and the manual BPM.
+- **Personal best** (user, 2026-11-23): for the current chart, the higher of the
+  official CSV import and the user's own recorded plays. It shows EX score, DJ level
+  with border difference, clear lamp, miss count and last played. With no record it
+  shows "Not played yet". With no chart selected it shows "No song selected".
+- **Recent plays** (user, 2026-11-23), modelled on the user's screenshot, newest first.
+  Each row shows:
+  - a difficulty tag (BEGINNER, NORMAL, HYPER, ANOTHER or LEGGENDARIA), in the
+    difficulty colour
+  - the title, in the difficulty colour
+  - the EX score
+  - the DJ level with its border difference, as in "AA+170" or "E−78". This is the
+    nearest DJ-level line and the distance above or below it.
+  - the option played (RANDOM, S-RANDOM, …) when it was read.
+
+  The decimal column in the screenshot is left out (user, 2026-11-23).
+- **Difficulty colours:** BEGINNER green, NORMAL blue, HYPER yellow, ANOTHER red,
+  LEGGENDARIA purple.
+- **Data before recognition exists:** Now playing, Personal best and Recent plays get
+  their real layout and empty states in the first plan. They fill with data once song
+  detection, CSV import and play records land. `?demo=1` fills them with made-up sample
+  rows, for design review only.
+- **History:** per-chart list of plays with a score-over-time graph (later).
 - **Settings:** capture backend, play side (1P/2P), data folder, bindings, GIF, theme,
-  skin folder and skin style, table updates.
+  skin folder and note style, table updates.
+- Respects `prefers-reduced-motion`.
 
 ### 5.9 Skins
 - **Folder:** `skins/<name>/` (setting `skin_dir`, default `skins/WMII_FHD`). The app
   serves only image files under that folder, at `/skin/...`.
-- **WMII_FHD layout** (from its `play/lua/*.lua`, 1920×1080):
-  - Sprite boxes:
-
-    | Part | File | Box (x, y, w, h) |
-    |---|---|---|
-    | Notes | `play/parts/notes/<style>.png` (default, light, pastel, photon, simple) | scratch (94, 0, 90, 19), white (187, 0, 52, 19), black (241, 0, 40, 19) |
-    | Key beam | `play/parts/laser/<name>.png` | black (0, 0, 40, 723), white (42, 0, 52, 723), scratch (96, 0, 90, 723) |
-    | Key flash | `play/parts/keyflash/<colour>.png` | white (0, 0, 63, 92), black (70, 0, 46, 78) |
-    | Lane background | `play/parts/lane/<name>.png` | 1P (0, 0, 432, 6), 2P (434, 0, 432, 6), repeated down the lane |
-    | Lane frame | `play/parts/frame/Wide/<colour>.png` | 1P (0, 0, 685, 1080), 2P (717, 0, 685, 1080) |
-    | Turntable | `play/parts/turntable/<name>.png` | label (0, 0, 49, 49) and symbol (49, 0, 49, 49) |
-    | Turntable light | `play/parts/turntableLight/<colour>.png` | light (0, 0, 256, 256), flash (256, 0, 256, 256) |
-
-  - Lane sizes: white keys 68, black keys 52, scratch 120, with 4 px gaps between lanes.
-    The lane is 576 wide, starting 75 px into the frame, with the judge area from y 287.
+- **Only the notes are used** (user, 2026-11-23): `play/parts/notes/<style>.png`
+  (default, light, pastel, photon, simple). Boxes (x, y, w, h): scratch (94, 0, 90, 19),
+  white (187, 0, 52, 19), black (241, 0, 40, 19).
+- **Lane sizes** follow the skin: white keys 68, black keys 52, scratch 120, with 4 px
+  gaps. The lane is 576 wide.
 - **Upward motion:** the skin's notes are drawn to fall toward the judge line. Here they
   rise from it. The sprites are symmetrical, so they're used as they are.
-- **Missing or broken skin:** with no skin, or a missing file, the lane falls back to
-  drawn shapes and the page shows a warning. The page never breaks.
-- **Bombs** (`bomb/*`, animation strips) are an optional extra, left to the builder.
-- Laid out for a second monitor (landscape and portrait). Respects
-  `prefers-reduced-motion`.
+- **Missing or broken skin:** with no skin, or a missing file, the notes are drawn as
+  plain bars and the settings page shows a warning. The page never breaks.
 
 ## 6. Development and delivery
 
@@ -306,7 +335,9 @@ capture work.
 - The button counter shows press counts only, with scratch up and down as two
   buttons. Counts reset when the app starts and from a reset button (user,
   2026-11-23).
-- The lane uses local skin images from `skins/`, which is gitignored (user,
+- The lane uses only the note images from the local skin in `skins/`, which is
+  gitignored. The rest of the lane is drawn (user, 2026-11-23).
+- The layout is a 3×4 grid with personal best and recent plays panels (user,
   2026-11-23).
 - SP only, with 1P/2P as a setting (user, 2026-11-23).
 - Builder's calls (can be changed):

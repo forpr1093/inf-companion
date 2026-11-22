@@ -803,6 +803,104 @@ uv run inf-companion                 # .venv and data\ are created inside D:\cod
 
 ---
 
+## Revision 2 (user, 2026-11-23, after reviewing Tasks 1–12)
+
+The user approved the lane's feel but changed three things (spec §5.8, §5.9):
+1. Only the skin's **notes** are used. The frame, lane strip, beams, flashes and turntable are drawn.
+2. The layout is a **3×4 grid**: the lane spans rows 1–3 of column 1. Now playing (row 1) and Personal best (row 2) span columns 2–3. Row 3 has the counter in column 2 and a square GIF in column 3. Recent plays spans row 4. Portrait is dropped.
+3. New panels: **Personal best** and **Recent plays**. They get their layout and empty states now. Plan 3 feeds them data.
+
+**Order from here:** Task 16, then Task 17, then the user design check, then Tasks 13, 14 and 15 as amended below.
+
+**Amendments to Tasks 13–14:**
+- **Task 13:** settings show the skin folder and the note style only. `orientation` is gone.
+- **Task 14:** the GIF player goes in the grid's GIF cell, as a square sized to the counter row's height.
+
+### Task 16: Drawn IIDX lane, skin notes only
+
+**Files:**
+- Modify: `inf_companion/settings.py`, `inf_companion/server/skin.py`, `web/src/lib/events.ts`, `web/src/lib/lane/skin.ts`, `web/src/lib/lane/Lane.svelte`
+- Test: `tests/test_storage.py`, `tests/test_skin.py`, `web/src/lib/lane/skin.test.ts`
+
+**Interfaces:**
+- **Settings:** remove `orientation`, `skin_frame`, `skin_beam`, `skin_flash`, `skin_lane` and `skin_turntable` from `DEFAULT_SETTINGS`, the validator and the TS `Settings` / `DEFAULTS`. Keep `skin_dir` and `skin_notes`. Keys still stored from an older version are ignored by `get_all()`, which already filters to known keys.
+- `list_skin(skin_dir) -> {"available": bool, "notes": [str]}`.
+- **skin.ts:**
+  - `SPRITES = { note: {...} }` only.
+  - `skinUrls(s) -> { notes: string }` (still carrying `?dir=`).
+  - `loadSkin(urls, deps?) -> { textures: { note: Record<SpriteKind, Texture> } | null; missing: string[] }`.
+  - `frameGeometry` is removed.
+- **Lane.svelte, drawn parts:**
+  - Lanes fill the canvas width with `laneLayout` proportions. The background is `--lane-bg` with 1 px `--line` dividers. The judge line is a 4 px `--key-scratch` bar at `judgeY = 0.80 * height`.
+  - Below the judge line:
+    - **Key caps:** white keys full height, black keys starting 12% lower. They're lit (`--key-white` / `--key-black` at full alpha) while held and dimmed to 0.28 otherwise.
+    - **Turntable disc:** a circle under the scratch lane, with a diameter of 0.9 × the scratch lane width, a `--line-strong` rim and one radial marker line. It rotates +1 turn/s while `S` is held up and −1 turn/s while held down.
+  - **Beam on press:** a vertical gradient from `--accent` at 0.45 alpha at the judge line to transparent at 45% of the lane height. It's fully lit while held and fades out over 200 ms after release.
+  - **Notes:** the skin sprite when loaded, otherwise a bar in the lane colour.
+
+- [ ] **Step 1:** Update the tests first.
+  - Python: `DEFAULT_SETTINGS` has no `orientation` or `skin_frame`. `list_skin` returns only `available` and `notes`. A stored legacy key `skin_frame` doesn't appear in `get_all()`.
+  - TS: `skinUrls` returns only `notes`, and `loadSkin` with a failing notes URL returns `textures: null`.
+  - Run them and watch them FAIL.
+- [ ] **Step 2:** Implement. Run `uv run pytest -q` and `npx vitest run`, both PASS.
+- [ ] **Step 3:** Check in the browser at `/?demo=1`: the drawn lane with skin notes, in 1P and 2P, plus the fallback with a missing skin.
+- [ ] **Step 4:** Build, then commit `feat(web): drawn IIDX lane, skin notes only`.
+
+### Task 17: Grid layout with now playing, personal best and recent plays
+
+**Files:**
+- Create: `web/src/lib/score.ts`, `web/src/lib/score.test.ts`, `web/src/display/NowPlaying.svelte`, `web/src/display/PersonalBest.svelte`, `web/src/display/RecentPlays.svelte`, `web/src/lib/demoPanels.ts`
+- Modify: `web/src/lib/events.ts`, `web/src/lib/stores.ts`, `web/src/lib/theme.css`, `web/src/display/Display.svelte`
+
+**Interfaces:**
+- `events.ts` types, shared with Plan 3, which will send `chart`, `personal_best` and `recent_plays` events with these exact shapes:
+  - `type Difficulty = "BEGINNER" | "NORMAL" | "HYPER" | "ANOTHER" | "LEGGENDARIA"`
+  - `interface Chart { title: string; difficulty: Difficulty; level: number; bpm: number | null; notes: number | null }`
+  - `interface PersonalBest { score: number; notes: number | null; lamp: string; miss_count: number | null; last_played: string | null; source: "official" | "local" }`
+  - `interface RecentPlay { title: string; difficulty: Difficulty; level: number; score: number; notes: number | null; option: string | null; played_at: string }`
+  - New `ServerEvent` members: `{ type: "chart"; chart: Chart | null }`, `{ type: "personal_best"; best: PersonalBest | null }` (null means not played yet) and `{ type: "recent_plays"; plays: RecentPlay[] }`. `applyEvent` stores them.
+- Stores: `nowPlaying: Writable<Chart | null>`, `personalBest: Writable<PersonalBest | null>` and `recentPlays: Writable<RecentPlay[]>`.
+- `score.ts`:
+  - `DJ_LEVELS = ["F","E","D","C","B","A","AA","AAA"]`
+  - `djLevel(score, notes) -> string` returns the highest level with `score >= ceil(notes*2*k/9)`, where k = 2..8 for E..AAA, and F otherwise.
+  - `djBorder(score, notes) -> { level: string; diff: number; label: string }` finds the nearest line among E..AAA. On a tie it takes the line at or below the score. `label` is `level + ("+" | "−") + |diff|`. Without notes it returns null.
+  - `DIFF_SHORT = { BEGINNER: "B", NORMAL: "N", HYPER: "H", ANOTHER: "A", LEGGENDARIA: "L" }`.
+- Difficulty colour tokens in `theme.css`, for both themes: `--diff-beginner` (green), `--diff-normal` (blue), `--diff-hyper` (yellow), `--diff-another` (red), `--diff-leggendaria` (purple).
+- **Display grid:**
+  - `grid-template-columns: auto minmax(0,1fr) auto`. The lane column width comes from aspect-ratio 576:1000 against rows 1–3.
+  - `grid-template-rows: auto auto minmax(0,1fr) minmax(0, 0.9fr)`.
+  - Areas: `"lane now now" "lane pb pb" "lane counter gif" "recent recent recent"`. The 2P mirror is `"now now lane" "pb pb lane" "counter gif lane" "recent recent recent"`.
+  - The GIF cell is square (`aspect-ratio: 1; height: 100%`).
+- **Panels:**
+  - **NowPlaying:** the difficulty tag and level in the difficulty colour, the title, and the BPM. With no chart it shows "No song selected" and the manual BPM marked "(manual)".
+  - **PersonalBest:**
+    - With a best: EX score, `djBorder` label, lamp, miss count and last played.
+    - With a chart but no best: "Not played yet".
+    - With no chart: "No song selected".
+  - **RecentPlays:** a table with columns difficulty tag (coloured) | title (coloured) | EX score | `djBorder` label | option. Newest first, rows that don't fit are clipped, and the empty state is "No plays yet".
+- `demoPanels()` fills the three stores with made-up sample data (invented titles) when `?demo=1`, for design review only.
+
+- [ ] **Step 1: Write the failing tests** (`score.test.ts`). With `notes = 1000` (max 2000), the lines are E 445, D 667, C 889, B 1112, A 1334, AA 1556, AAA 1778.
+
+```ts
+test("dj level", () => {
+  expect(djLevel(2000, 1000)).toBe("AAA"); expect(djLevel(1777, 1000)).toBe("AA");
+  expect(djLevel(444, 1000)).toBe("F"); expect(djLevel(445, 1000)).toBe("E");
+});
+test("nearest border label", () => {
+  expect(djBorder(1600, 1000)!.label).toBe("AA+44");
+  expect(djBorder(1700, 1000)!.label).toBe("AAA−78");
+  expect(djBorder(367, 1000)!.label).toBe("E−78");
+  expect(djBorder(1556, 1000)!.label).toBe("AA+0");
+  expect(djBorder(100, null)).toBeNull();
+});
+test("panel events land in stores", () => { /* applyEvent chart / personal_best / recent_plays -> stores */ });
+```
+
+- [ ] **Step 2:** FAIL. **Step 3:** Implement. **Step 4:** PASS, and svelte-check is clean.
+- [ ] **Step 5:** Check `/?demo=1` at 1920×1080 in 1P and 2P, dark and light. Then **stop for the user's design check.**
+- [ ] **Step 6:** Build, then commit `feat(web): 3x4 grid with now playing, personal best, recent plays`.
+
 ## Roadmap: Plans 2 and 3 (written after this plan ships)
 
 Each gets its own writing-plans pass, because each depends on results that don't exist yet: spike numbers and fixture screenshots.
