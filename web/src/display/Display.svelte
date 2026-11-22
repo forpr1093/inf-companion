@@ -2,6 +2,7 @@
   import { onMount } from "svelte";
   import { emitKey, settings, status } from "../lib/stores";
   import { devKeyboard, startDemo } from "../lib/demo";
+  import Lane from "../lib/lane/Lane.svelte";
 
   const params = new URLSearchParams(location.search);
   const demo = params.has("demo");
@@ -26,7 +27,7 @@
 
 <div class="display {orientation}" class:p2={$settings.side === "2P"}>
   <section class="lane-area" aria-label="Key lane">
-    <div class="placeholder">lane</div>
+    <Lane />
   </section>
 
   <section class="gif-area" aria-label="Loop">
