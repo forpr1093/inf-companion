@@ -122,12 +122,23 @@
           const yBottom = judgeY - n.bottom * judgeY;
           const yTop = Math.min(judgeY - n.top * judgeY, yBottom - minH);
           if (skin) {
-            let sp = noteSprites.children[used] as Sprite | undefined;
-            if (!sp) { sp = new Sprite(); noteSprites.addChild(sp); }
-            sp.texture = skin.note[spriteKind(n.lane)];
-            sp.visible = true;
-            sp.x = l.x; sp.y = yTop; sp.width = l.w; sp.height = yBottom - yTop; sp.alpha = n.alpha;
-            used++;
+            // Never stretch the sprite (its soft edges would smear): a hold is a drawn body
+            // with the note sprite at natural height on each end, like a charge note.
+            const tex = skin.note[spriteKind(n.lane)];
+            const len = yBottom - yTop;
+            const ends = len > minH * 4 ? [yTop, yBottom - minH] : [yBottom - minH];
+            if (ends.length === 2) {
+              notesG.rect(l.x + l.w * 0.1, yTop + minH / 2, l.w * 0.8, len - minH)
+                .fill({ color: colors[l.color], alpha: 0.55 * n.alpha });
+            }
+            for (const y of ends) {
+              let sp = noteSprites.children[used] as Sprite | undefined;
+              if (!sp) { sp = new Sprite(); noteSprites.addChild(sp); }
+              sp.texture = tex;
+              sp.visible = true;
+              sp.x = l.x; sp.y = y; sp.width = l.w; sp.height = minH; sp.alpha = n.alpha;
+              used++;
+            }
           } else {
             notesG.rect(l.x, yTop, l.w, yBottom - yTop).fill({ color: colors[l.color], alpha: n.alpha });
           }

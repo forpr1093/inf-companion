@@ -1,5 +1,5 @@
 import { afterEach, expect, test, vi } from "vitest";
-import { devKeyboardMap, startDemo } from "./demo";
+import { devKeyboard, devKeyboardMap, startDemo } from "./demo";
 import type { KeyEvent } from "./events";
 
 afterEach(() => vi.useRealTimers());
@@ -26,4 +26,19 @@ test("demo includes scratch with a direction", () => {
 
 test("dev keyboard map covers every lane", () => {
   expect(new Set(Object.values(devKeyboardMap).map(v => v.lane))).toEqual(new Set(["S", "1", "2", "3", "4", "5", "6", "7"]));
+});
+
+test("dev keyboard releases held keys when the page loses focus", () => {
+  const target = new EventTarget();
+  (globalThis as unknown as { window: EventTarget }).window = target;
+  const got: string[] = [];
+  const stop = devKeyboard(e => got.push(`${e.type}:${e.lane}`));
+  const ev = (type: string, code: string) => Object.assign(new Event(type), { code, repeat: false });
+  target.dispatchEvent(ev("keydown", "KeyX"));
+  target.dispatchEvent(ev("keydown", "ShiftLeft"));
+  target.dispatchEvent(ev("keyup", "ShiftLeft"));
+  target.dispatchEvent(new Event("blur"));
+  target.dispatchEvent(new Event("blur"));
+  stop();
+  expect(got).toEqual(["key_down:3", "key_down:S", "key_up:S", "key_up:3"]);
 });

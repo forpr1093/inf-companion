@@ -89,7 +89,20 @@ export function devKeyboard(emit: Emit): () => void {
     emit(key(down ? "key_down" : "key_up", m.lane, m.dir));
   };
   const kd = onKey(true), ku = onKey(false);
+  const down = new Set<string>();
+  const track = (e: KeyboardEvent) => { if (devKeyboardMap[e.code]) (e.type === "keydown" ? down.add(e.code) : down.delete(e.code)); };
+  // Losing focus means we never see the key going up: release everything still held.
+  const blur = () => {
+    for (const code of down) { const m = devKeyboardMap[code]; emit(key("key_up", m.lane, m.dir)); }
+    down.clear();
+  };
   window.addEventListener("keydown", kd);
   window.addEventListener("keyup", ku);
-  return () => { window.removeEventListener("keydown", kd); window.removeEventListener("keyup", ku); };
+  window.addEventListener("keydown", track);
+  window.addEventListener("keyup", track);
+  window.addEventListener("blur", blur);
+  return () => {
+    for (const [t, f] of [["keydown", kd], ["keyup", ku], ["keydown", track], ["keyup", track]] as const) window.removeEventListener(t, f);
+    window.removeEventListener("blur", blur);
+  };
 }

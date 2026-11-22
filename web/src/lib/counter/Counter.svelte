@@ -39,7 +39,7 @@
 
 <style>
   .counter {
-    --box: clamp(44px, 9cqi, 92px);
+    --box: clamp(24px, 9cqi, 92px);
     container-type: inline-size;
     width: 100%;
     display: grid;
