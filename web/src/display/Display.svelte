@@ -8,6 +8,7 @@
   import NowPlaying from "./NowPlaying.svelte";
   import PersonalBest from "./PersonalBest.svelte";
   import RecentPlays from "./RecentPlays.svelte";
+  import GifPlayer from "../lib/gif/GifPlayer.svelte";
 
   const params = new URLSearchParams(location.search);
   const demo = params.has("demo");
@@ -26,7 +27,7 @@
   <section class="now"><NowPlaying /></section>
   <section class="pb"><PersonalBest /></section>
   <section class="counter-area" aria-label="Button counter"><Counter /></section>
-  <section class="gif-area" aria-label="Loop"><div class="placeholder">GIF</div></section>
+  <section class="gif-area" aria-label="Loop"><GifPlayer /></section>
   <section class="recent"><RecentPlays /></section>
   <a class="to-settings" href="#/settings" aria-label="Settings">Settings</a>
   <span class="conn" data-status={$status} title="Server connection: {$status}" aria-label="Server connection: {$status}"></span>
@@ -66,11 +67,6 @@
   .gif-area { grid-area: gif; min-height: 0; min-width: 0; }
   .recent { grid-area: recent; min-height: 0; min-width: 0; height: calc(36px + 2rem + 6 * 2.5rem); }
 
-  .placeholder {
-    width: 100%; height: 100%;
-    border: 1px dashed var(--line); color: var(--muted);
-    display: grid; place-items: center;
-  }
   .to-settings {
     position: absolute; right: 20px; bottom: 0; font-size: 0.75rem; color: var(--muted);
     text-decoration: none; opacity: 0.4;
