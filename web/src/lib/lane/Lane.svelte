@@ -145,13 +145,15 @@
     function onKey(e: KeyEvent) {
       const t = performance.now();
       if (e.type === "key_down") {
-        field.press(e.lane, t);
+        field.press(e.lane, t, e.dir);
         released.delete(e.lane);
-        if (e.lane === "S") scratchDir = e.dir === "down" ? -1 : 1;
       } else {
-        field.release(e.lane, t);
-        released.set(e.lane, t);
-        if (e.lane === "S") scratchDir = 0;
+        field.release(e.lane, t, e.dir);
+        if (!field.isHeld(e.lane)) released.set(e.lane, t);
+      }
+      if (e.lane === "S") {
+        const d = field.activeDir("S");
+        scratchDir = d === "down" ? -1 : d === "up" ? 1 : 0;
       }
       if (debug && e.type === "key_down") {
         samples.push(performance.timeOrigin + performance.now() - e.at);

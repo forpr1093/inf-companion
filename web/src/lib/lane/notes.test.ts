@@ -46,3 +46,39 @@ test("press flash fades over 120 ms", () => {
   expect(f.flashes(60)[0].alpha).toBeCloseTo(0.5);
   expect(f.flashes(130)).toEqual([]);
 });
+
+const heldNote = (f: NoteField, t: number, lane = "S") => f.frame(t).find(n => n.lane === lane && n.bottom === 0);
+
+test("switching scratch direction while holding keeps a long note growing", () => {
+  const f = new NoteField({ riseMs: 1000 });
+  f.press("S", 0, "up");
+  f.press("S", 300, "down");   // reverse while still holding up
+  f.release("S", 400, "up");   // let go of the old direction
+  const n = heldNote(f, 800);
+  expect(n).toBeDefined();
+  expect(n!.top).toBeCloseTo(0.5); // grown since the reversal at 300
+  expect(f.isHeld("S")).toBe(true);
+  expect(f.activeDir("S")).toBe("down");
+});
+
+test("releasing the newer direction hands the hold back to the older one", () => {
+  const f = new NoteField({ riseMs: 1000 });
+  f.press("S", 0, "up");
+  f.press("S", 100, "down");
+  f.release("S", 200, "down");
+  const n = heldNote(f, 500);
+  expect(n).toBeDefined();
+  expect(n!.top).toBeCloseTo(0.3);
+  expect(f.activeDir("S")).toBe("up");
+  f.release("S", 600, "up");
+  expect(f.isHeld("S")).toBe(false);
+  expect(heldNote(f, 700)).toBeUndefined();
+});
+
+test("releaseAll clears held directions", () => {
+  const f = new NoteField();
+  f.press("S", 0, "up"); f.press("S", 10, "down");
+  f.releaseAll(20);
+  expect(f.isHeld("S")).toBe(false);
+  expect(f.activeDir("S")).toBeNull();
+});

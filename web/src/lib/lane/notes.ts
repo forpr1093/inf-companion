@@ -5,6 +5,8 @@ export interface NoteView { lane: Lane; top: number; bottom: number; alpha: numb
 
 interface Note { lane: Lane; pressT: number; releaseT: number | null; }
 
+export type Dir = "up" | "down" | null;
+
 export interface NoteFieldOptions { riseMs?: number; fadeFrom?: number; maxNotes?: number; }
 
 const FLASH_MS = 120;
@@ -20,6 +22,7 @@ export class NoteField {
   private notes: Note[] = [];
   private held = new Map<Lane, Note>();
   private lastPress = new Map<Lane, number>();
+  private dirs = new Map<Lane, Dir[]>(); // held directions per lane, newest last
 
   constructor(opts: NoteFieldOptions = {}) {
     this.riseMs = opts.riseMs ?? 900;
@@ -27,9 +30,46 @@ export class NoteField {
     this.maxNotes = opts.maxNotes ?? 256;
   }
 
-  press(lane: Lane, t: number): void {
-    const prev = this.held.get(lane);
-    if (prev) prev.releaseT = t;
+  /**
+   * Start a note. `dir` tells the two scratch directions apart: each direction is held on
+   * its own, the newest one owns the growing note.
+   */
+  press(lane: Lane, t: number, dir: Dir = null): void {
+    const stack = (this.dirs.get(lane) ?? []).filter(d => d !== dir);
+    stack.push(dir);
+    this.dirs.set(lane, stack);
+    this.startNote(lane, t);
+  }
+
+  /**
+   * Release one direction. Releasing a direction that isn't the newest one does nothing
+   * visible; releasing the newest hands the hold back to a direction still held.
+   */
+  release(lane: Lane, t: number, dir: Dir = null): void {
+    const stack = this.dirs.get(lane);
+    if (!stack || !stack.includes(dir)) return;
+    const wasActive = stack[stack.length - 1] === dir;
+    stack.splice(stack.indexOf(dir), 1);
+    if (!wasActive) return;
+    this.endNote(lane, t);
+    if (stack.length > 0) this.startNote(lane, t);
+    else this.dirs.delete(lane);
+  }
+
+  releaseAll(t: number): void {
+    for (const n of this.held.values()) n.releaseT = t;
+    this.held.clear();
+    this.dirs.clear();
+  }
+
+  /** The direction that owns the current hold, or null. */
+  activeDir(lane: Lane): Dir {
+    const stack = this.dirs.get(lane);
+    return stack && stack.length ? stack[stack.length - 1] : null;
+  }
+
+  private startNote(lane: Lane, t: number): void {
+    this.endNote(lane, t);
     const n: Note = { lane, pressT: t, releaseT: null };
     this.notes.push(n);
     this.held.set(lane, n);
@@ -40,16 +80,11 @@ export class NoteField {
     }
   }
 
-  release(lane: Lane, t: number): void {
+  private endNote(lane: Lane, t: number): void {
     const n = this.held.get(lane);
     if (!n) return;
     n.releaseT = t;
     this.held.delete(lane);
-  }
-
-  releaseAll(t: number): void {
-    for (const n of this.held.values()) n.releaseT = t;
-    this.held.clear();
   }
 
   isHeld(lane: Lane): boolean { return this.held.has(lane); }
