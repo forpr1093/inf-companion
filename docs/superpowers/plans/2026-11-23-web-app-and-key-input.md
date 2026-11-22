@@ -910,7 +910,7 @@ test("panel events land in stores", () => { /* applyEvent chart / personal_best 
 
 ## Revision 4 (user, 2026-11-23)
 
-- **Row ratios beside the lane:** 3 : 3 : 2 (now playing, personal best, counter + GIF) in the 4-row layout, and 3 : 3 : 1 : 1 in the 5-row layout. Recent plays stays a fixed six-row height.
+- **Row ratios beside the lane:** 2 : 3 : 2 (now playing, personal best, counter + GIF) in the 4-row layout, and 1 : 2 : 1 : 1 in the 5-row layout (user revised from 3:3:2 / 3:3:1:1). Recent plays stays a fixed six-row height.
 - **Panels fill their rows.** The `now` and `pb` cells are CSS size containers, and panel text scales with `cqh` / `cqi`.
 - **Artist:** `Chart` gains `artist: string | null`. Now playing shows it under the title. Plan 3's `chart` event must include it.
 

@@ -216,12 +216,12 @@ Windows gaming PC                                      Second monitor
 
   For 2P the lane moves to the right column and the rest shifts left (builder's call).
   The GIF is a square that matches the counter's height. Row heights beside the lane are
-  ratios (user, 2026-11-23): now playing : personal best : counter row = **3 : 3 : 2**.
+  ratios (user, 2026-11-23): now playing : personal best : counter row = **2 : 3 : 2**.
   Recent plays has a fixed height (six rows). Data never changes the layout.
 
   **Narrow windows (≤ 1440 px wide):** 5 rows. The GIF gets its own row above the
   counter, and both span columns 2–3 (user, 2026-11-23). Row heights are now playing :
-  personal best : GIF : counter = **3 : 3 : 1 : 1**, and the counter scales to fit its
+  personal best : GIF : counter = **1 : 2 : 1 : 1**, and the counter scales to fit its
   cell.
 - **Lane:** scratch plus 7 keys, drawn with PixiJS (WebGL). Each `key_down` spawns a
   note that floats up from the judge line and fades, and the note grows while the key

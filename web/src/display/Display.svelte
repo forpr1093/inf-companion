@@ -39,8 +39,8 @@
     padding: 18px;
     position: relative;
     grid-template-columns: auto minmax(0, 1fr) auto;
-    /* Beside the lane: now playing, personal best, counter + GIF at 3 : 3 : 2. */
-    grid-template-rows: minmax(0, 3fr) minmax(0, 3fr) minmax(0, 2fr) auto;
+    /* Beside the lane: now playing, personal best, counter + GIF at 2 : 3 : 2. */
+    grid-template-rows: minmax(0, 2fr) minmax(0, 3fr) minmax(0, 2fr) auto;
     grid-template-areas:
       "lane now now"
       "lane pb pb"
@@ -68,8 +68,8 @@
   @media (max-width: 1440px) {
     .display {
       grid-template-columns: auto minmax(0, 1fr) minmax(0, 1fr);
-      /* now playing, personal best, GIF, counter at 3 : 3 : 1 : 1 */
-      grid-template-rows: minmax(0, 3fr) minmax(0, 3fr) minmax(0, 1fr) minmax(0, 1fr) auto;
+      /* now playing, personal best, GIF, counter at 1 : 2 : 1 : 1 */
+      grid-template-rows: minmax(0, 1fr) minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr) auto;
       grid-template-areas:
         "lane now now"
         "lane pb pb"
