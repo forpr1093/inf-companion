@@ -199,30 +199,24 @@ Windows gaming PC                                      Second monitor
 ### 5.8 Web page (`web/`)
 - Vite + Svelte. The build is static files served by the Python app. Node is only
   needed on the Mac.
-- **Layout** (user, 2026-11-23): one landscape grid for the second monitor, 3 columns ×
-  4 rows. Portrait is not designed for.
+- **Layout** (user, 2026-11-23): one grid for the second monitor, the same at every
+  screen size. Portrait is not designed for.
 
   ```
   ┌────────────┬──────────────────────────────┐
-  │            │ Now playing                  │
-  │            ├──────────────────────────────┤
-  │ IIDX lane  │ Personal best                │
-  │ (rows 1–3) ├───────────────────┬──────────┤
-  │            │ Button counter    │ GIF      │
-  ├────────────┴───────────────────┴──────────┤
-  │ Recent plays                              │
+  │            │ Now playing                  │  2
+  │            ├───────┬──────────────────────┤
+  │ IIDX lane  │  GIF  │ Personal best        │  3   (GIF : personal best = 1 : 3 wide)
+  │ (rows 1–3) ├───────┴──────────────────────┤
+  │            │ Button counter               │  2
+  ├────────────┴──────────────────────────────┤
+  │ Recent plays (fixed height, six rows)     │
   └───────────────────────────────────────────┘
   ```
 
-  For 2P the lane moves to the right column and the rest shifts left (builder's call).
-  The GIF is a square that matches the counter's height. Row heights beside the lane are
-  ratios (user, 2026-11-23): now playing : personal best : counter row = **2 : 3 : 2**.
-  Recent plays has a fixed height (six rows). Data never changes the layout.
-
-  **Narrow windows (≤ 1440 px wide):** 5 rows. The GIF gets its own row above the
-  counter, and both span columns 2–3 (user, 2026-11-23). Row heights are now playing :
-  personal best : GIF : counter = **1 : 2 : 1 : 1**, and the counter scales to fit its
-  cell.
+  Row heights beside the lane are ratios (2 : 3 : 2), so data never moves the layout.
+  For 2P the lane moves to the right column. The GIF stays left of personal best
+  (builder's call). The GIF is fitted inside its cell without stretching.
 - **Lane:** scratch plus 7 keys, drawn with PixiJS (WebGL). Each `key_down` spawns a
   note that floats up from the judge line and fades, and the note grows while the key
   is held. The scratch sits on the left for 1P and on the right for 2P. Notes appear
@@ -249,8 +243,9 @@ Windows gaming PC                                      Second monitor
 - **Now playing:** title, artist, difficulty and level (difficulty colour), and BPM. Until a
   song is recognised it shows "No song selected" and the manual BPM.
 - **Personal best** (user, 2026-11-23): for the current chart, the higher of the
-  official CSV import and the user's own recorded plays. It shows EX score, DJ level
-  with border difference, clear lamp, miss count and last played. With no record it
+  official CSV import and the user's own recorded plays. It's a stack: clear type
+  (small), DJ grade (large), EX score (medium) with the border difference beside it
+  (small), then miss count and last played (small). With no record it
   shows "Not played yet". With no chart selected it shows "No song selected".
 - **Recent plays** (user, 2026-11-23), modelled on the user's screenshot, newest first.
   Each row shows:

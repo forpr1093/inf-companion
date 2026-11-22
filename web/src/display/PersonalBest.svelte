@@ -1,34 +1,35 @@
 <script lang="ts">
   import { nowPlaying, personalBest } from "../lib/stores";
-  import { djBorder } from "../lib/score";
+  import { djBorder, djLevel } from "../lib/score";
 
   const LAMP_VAR: Record<string, string> = {
     "FULLCOMBO CLEAR": "var(--accent)", "EX HARD CLEAR": "var(--diff-hyper)", "HARD CLEAR": "var(--text)",
     "CLEAR": "var(--diff-normal)", "EASY CLEAR": "var(--diff-beginner)", "ASSIST CLEAR": "var(--diff-leggendaria)",
     "FAILED": "var(--muted)",
   };
-  const border = $derived($personalBest ? djBorder($personalBest.score, $personalBest.notes ?? $nowPlaying?.notes ?? null) : null);
+  const notes = $derived($personalBest?.notes ?? $nowPlaying?.notes ?? null);
+  const grade = $derived($personalBest && notes ? djLevel($personalBest.score, notes) : null);
+  const border = $derived($personalBest ? djBorder($personalBest.score, notes) : null);
 </script>
 
+<!--
+  Stack (user, 2026-11-23): clear type (small) / grade (large) / score (medium) with the
+  border difference beside it (small) / misses and last played (small).
+-->
 <div class="panel"><div class="inner">
-  <p class="kicker">Personal best</p>
-  {#if !$nowPlaying}
-    <p class="empty">No song selected</p>
-  {:else if !$personalBest}
-    <p class="empty">Not played yet</p>
+  {#if !$nowPlaying || !$personalBest}
+    <p class="label">Personal best</p>
+    <p class="empty">{$nowPlaying ? "Not played yet" : "No song selected"}</p>
   {:else}
-    <div class="best">
-      <div class="main">
-        <span class="score">{$personalBest.score}</span>
-        {#if border}<span class="border">{border.label}</span>{/if}
-      </div>
-      <div class="side">
-        <span class="lamp" style:color={LAMP_VAR[$personalBest.lamp] ?? "var(--text)"}>{$personalBest.lamp}</span>
-        {#if $personalBest.miss_count != null}
-          <span class="meta">{$personalBest.miss_count} miss{$personalBest.miss_count === 1 ? "" : "es"}</span>
-        {/if}
-        {#if $personalBest.last_played}<span class="meta">last played {$personalBest.last_played}</span>{/if}
-      </div>
+    <p class="clear">
+      <span style:color={LAMP_VAR[$personalBest.lamp] ?? "var(--text)"}>{$personalBest.lamp}</span>
+      <span class="label">Personal best</span>
+    </p>
+    <p class="grade">{grade ?? "—"}</p>
+    <p class="score">{$personalBest.score}{#if border}<span class="diff">{border.label}</span>{/if}</p>
+    <div class="meta">
+      {#if $personalBest.miss_count != null}<p>{$personalBest.miss_count} miss{$personalBest.miss_count === 1 ? "" : "es"}</p>{/if}
+      {#if $personalBest.last_played}<p>Last played {$personalBest.last_played}</p>{/if}
     </div>
   {/if}
 </div></div>
@@ -36,14 +37,16 @@
 <style>
   /* The section around this panel is a size container: text scales with the cell. */
   .panel { height: 100%; }
-  .inner { display: flex; flex-direction: column; }
-  .kicker { margin: 0 0 6px; color: var(--muted); font-size: clamp(0.85rem, 6.5cqh, 1.05rem); font-stretch: 112%; }
-  .empty { margin: auto 0; font-size: clamp(1.1rem, 10cqh, 1.8rem); color: var(--muted); }
-  .best { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: space-between; gap: 24px; }
-  .main { display: flex; align-items: baseline; gap: 0.5em; min-width: 0; }
-  .score { font-size: clamp(2rem, min(34cqh, 9cqi), 5.5rem); font-weight: 700; font-stretch: 85%; line-height: 1; font-variant-numeric: tabular-nums; }
-  .border { font-size: clamp(1.2rem, min(14cqh, 3.6cqi), 2.3rem); font-weight: 600; font-stretch: 90%; }
-  .side { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; text-align: right; }
-  .lamp { font-size: clamp(1rem, 9cqh, 1.5rem); font-weight: 600; font-stretch: 105%; }
-  .meta { color: var(--muted); font-size: clamp(0.85rem, 7cqh, 1.15rem); }
+  .inner { display: flex; flex-direction: column; justify-content: center; gap: 0.2em; }
+  p { margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .label { color: var(--muted); font-size: clamp(0.8rem, 5.5cqh, 1rem); font-weight: 400; font-stretch: 112%; }
+  .empty { margin-top: 0.3em; font-size: clamp(1.1rem, 10cqh, 1.8rem); color: var(--muted); }
+  .clear { display: flex; justify-content: space-between; align-items: baseline; gap: 12px;
+    font-size: clamp(0.85rem, 7cqh, 1.25rem); font-weight: 600; font-stretch: 105%; }
+  .grade { font-size: clamp(2.2rem, min(30cqh, 14cqi), 6rem); font-weight: 700; font-stretch: 90%; line-height: 1; }
+  .score { font-size: clamp(1.3rem, min(15cqh, 7cqi), 3rem); font-weight: 600; font-stretch: 88%; line-height: 1.1;
+    font-variant-numeric: tabular-nums; }
+  .diff { margin-left: 0.6em; font-size: 0.5em; font-weight: 500; color: var(--muted); }
+  .meta { display: flex; flex-direction: column; gap: 0.15em; margin-top: 0.3em;
+    font-size: clamp(0.8rem, 6cqh, 1.1rem); color: var(--muted); }
 </style>

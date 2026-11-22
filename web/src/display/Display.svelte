@@ -32,27 +32,29 @@
 </div>
 
 <style>
+  /* One layout for every screen size (user, 2026-11-23). Beside the lane, rows are
+     now playing : GIF + personal best : counter = 2 : 3 : 2, and the GIF and personal
+     best split their row 1 : 3. */
   .display {
     height: 100vh;
     display: grid;
     gap: 18px;
     padding: 18px;
     position: relative;
-    grid-template-columns: auto minmax(0, 1fr) auto;
-    /* Beside the lane: now playing, personal best, counter + GIF at 2 : 3 : 2. */
+    grid-template-columns: auto minmax(0, 1fr) minmax(0, 3fr);
     grid-template-rows: minmax(0, 2fr) minmax(0, 3fr) minmax(0, 2fr) auto;
     grid-template-areas:
       "lane now now"
-      "lane pb pb"
-      "lane counter gif"
+      "lane gif pb"
+      "lane counter counter"
       "recent recent recent";
   }
   .display.p2 {
-    grid-template-columns: minmax(0, 1fr) auto auto;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 3fr) auto;
     grid-template-areas:
       "now now lane"
-      "pb pb lane"
-      "counter gif lane"
+      "gif pb lane"
+      "counter counter lane"
       "recent recent recent";
   }
   .lane-area { grid-area: lane; height: 100%; aspect-ratio: 0.62; min-height: 0; }
@@ -60,34 +62,8 @@
   .now { grid-area: now; min-width: 0; min-height: 0; container-type: size; }
   .pb { grid-area: pb; min-width: 0; min-height: 0; container-type: size; }
   .counter-area { grid-area: counter; min-height: 0; min-width: 0; display: grid; place-items: center; overflow: hidden; container-type: size; }
-  .gif-area { grid-area: gif; height: min(100%, 22vw); aspect-ratio: 1; min-height: 0; align-self: center; }
+  .gif-area { grid-area: gif; min-height: 0; min-width: 0; }
   .recent { grid-area: recent; min-height: 0; min-width: 0; height: calc(36px + 2rem + 6 * 2.5rem); }
-
-  /* Narrower windows: the counter row gets too tight beside the GIF, so the GIF moves
-     into its own row above the counter (5 rows). */
-  @media (max-width: 1440px) {
-    .display {
-      grid-template-columns: auto minmax(0, 1fr) minmax(0, 1fr);
-      /* now playing, personal best, GIF, counter at 1 : 2 : 1 : 1 */
-      grid-template-rows: minmax(0, 1fr) minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr) auto;
-      grid-template-areas:
-        "lane now now"
-        "lane pb pb"
-        "lane gif gif"
-        "lane counter counter"
-        "recent recent recent";
-    }
-    .display.p2 {
-      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
-      grid-template-areas:
-        "now now lane"
-        "pb pb lane"
-        "gif gif lane"
-        "counter counter lane"
-        "recent recent recent";
-    }
-    .gif-area { height: 100%; justify-self: center; }
-  }
 
   .placeholder {
     width: 100%; height: 100%;
