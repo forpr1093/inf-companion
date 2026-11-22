@@ -1,7 +1,7 @@
 import { writable, get } from "svelte/store";
 import { connect, type Status } from "./ws";
 import { applyKey } from "./counter/counts";
-import { DEFAULTS, emptyCounts, type Binding, type Counts, type DeviceInfo, type KeyEvent, type ServerEvent, type Settings, type Target } from "./events";
+import { DEFAULTS, emptyCounts, type Chart, type PersonalBest, type RecentPlay, type Binding, type Counts, type DeviceInfo, type KeyEvent, type ServerEvent, type Settings, type Target } from "./events";
 
 export const status = writable<Status>("connecting");
 export const settings = writable<Settings>({ ...DEFAULTS });
@@ -12,6 +12,10 @@ export const gifVersion = writable(0);
 export const bindProgress = writable<{ target: Target; index: number; total: number } | null>(null);
 export const counts = writable<Counts>(emptyCounts());
 export const lastError = writable<string | null>(null);
+export const nowPlaying = writable<Chart | null>(null);
+/** Best for the current chart; null means not played yet (or no chart). */
+export const personalBest = writable<PersonalBest | null>(null);
+export const recentPlays = writable<RecentPlay[]>([]);
 /** Skin files that failed to load (set by the lane). Empty when the skin loaded fully. */
 export const skinMissing = writable<string[]>([]);
 
@@ -49,6 +53,9 @@ export function applyEvent(e: ServerEvent): void {
     case "gif": hasGif.set(true); gifVersion.set(e.version); break;
     case "counts": counts.set(e.counts); break;
     case "error": lastError.set(e.message); break;
+    case "chart": nowPlaying.set(e.chart); break;
+    case "personal_best": personalBest.set(e.best); break;
+    case "recent_plays": recentPlays.set(e.plays); break;
   }
   for (const fn of eventListeners) fn(e);
 }

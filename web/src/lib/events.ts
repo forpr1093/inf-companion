@@ -32,6 +32,20 @@ export const DEFAULTS: Settings = {
   skin_notes: "default",
 };
 
+export type Difficulty = "BEGINNER" | "NORMAL" | "HYPER" | "ANOTHER" | "LEGGENDARIA";
+
+export interface Chart { title: string; difficulty: Difficulty; level: number; bpm: number | null; notes: number | null; }
+
+export interface PersonalBest {
+  score: number; notes: number | null; lamp: string; miss_count: number | null;
+  last_played: string | null; source: "official" | "local";
+}
+
+export interface RecentPlay {
+  title: string; difficulty: Difficulty; level: number; score: number; notes: number | null;
+  option: string | null; played_at: string;
+}
+
 export interface KeyEvent { type: "key_down" | "key_up"; lane: Lane; dir: "up" | "down" | null; t: number; at: number; }
 
 export type ServerEvent =
@@ -44,7 +58,10 @@ export type ServerEvent =
   | { type: "bind_cancelled"; at: number }
   | { type: "gif"; at: number; version: number }
   | { type: "counts"; at: number; counts: Counts }
-  | { type: "error"; at: number; message: string };
+  | { type: "error"; at: number; message: string }
+  | { type: "chart"; at: number; chart: Chart | null }
+  | { type: "personal_best"; at: number; best: PersonalBest | null }
+  | { type: "recent_plays"; at: number; plays: RecentPlay[] };
 
 export function emptyCounts(): Counts {
   return Object.fromEntries(TARGETS.map(t => [t, 0])) as Counts;
