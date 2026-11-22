@@ -39,8 +39,8 @@
 
 <style>
   .counter {
-    --box: clamp(24px, 9cqi, 92px);
-    container-type: inline-size;
+    /* Sized by the cell (Display makes it a size container): fit both width and height. */
+    --box: clamp(20px, min(9cqi, 27cqh), 92px);
     width: 100%;
     display: grid;
     grid-template-columns: auto auto;

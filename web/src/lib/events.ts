@@ -19,8 +19,6 @@ export interface Settings {
   manual_bpm: number;
   beats_per_loop: number;
   theme: "dark" | "light";
-  skin_dir: string;
-  skin_notes: string;
 }
 
 export const DEFAULTS: Settings = {
@@ -28,8 +26,6 @@ export const DEFAULTS: Settings = {
   manual_bpm: 150,
   beats_per_loop: 4,
   theme: "dark",
-  skin_dir: "skins/WMII_FHD",
-  skin_notes: "default",
 };
 
 export type Difficulty = "BEGINNER" | "NORMAL" | "HYPER" | "ANOTHER" | "LEGGENDARIA";

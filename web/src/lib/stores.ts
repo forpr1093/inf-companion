@@ -16,8 +16,6 @@ export const nowPlaying = writable<Chart | null>(null);
 /** Best for the current chart; null means not played yet (or no chart). */
 export const personalBest = writable<PersonalBest | null>(null);
 export const recentPlays = writable<RecentPlay[]>([]);
-/** Skin files that failed to load (set by the lane). Empty when the skin loaded fully. */
-export const skinMissing = writable<string[]>([]);
 
 // Key events are too frequent for Svelte stores: plain pub/sub.
 type KeyFn = (e: KeyEvent) => void;

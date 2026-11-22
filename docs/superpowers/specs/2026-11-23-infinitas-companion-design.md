@@ -216,15 +216,18 @@ Windows gaming PC                                      Second monitor
 
   For 2P the lane moves to the right column and the rest shifts left (builder's call).
   The GIF is a square that matches the counter's height.
+
+  **Narrow windows (≤ 1440 px wide):** 5 rows. The GIF gets its own row above the
+  counter, and both span columns 2–3 (user, 2026-11-23). The GIF and counter rows share
+  the height equally, and the counter scales to fit its cell.
 - **Lane:** scratch plus 7 keys, drawn with PixiJS (WebGL). Each `key_down` spawns a
   note that floats up from the judge line and fades, and the note grows while the key
   is held. The scratch sits on the left for 1P and on the right for 2P. Notes appear
   only for presses: there's no chart, and nothing falls.
-  - Only the **notes** come from the skin (§5.9) (user, 2026-11-23). Everything else is
-    drawn as simple shapes in an IIDX style: dark lanes with thin dividers, a red judge
-    line, white and blue key caps, a turntable disc that spins with scratch, and a soft
-    beam on each press.
-  - Without a skin, the notes are drawn as plain bars too.
+  - Everything is drawn (user, 2026-11-23): dark lanes with thin dividers, a red judge
+    line, white and blue key caps, a turntable disc that spins with scratch, a soft beam
+    on each press, and notes as bars with a highlight. A press held longer than about
+    120 ms draws as a long note: a translucent body between two note caps.
 - **Button counter** (user, 2026-11-23), like the user's reference screenshot:
   - Keys 2, 4 and 6 are in the top row and 1, 3, 5 and 7 in the bottom row. Each box
     shows how many times that key was pressed.
@@ -265,21 +268,14 @@ Windows gaming PC                                      Second monitor
   rows, for design review only.
 - **History:** per-chart list of plays with a score-over-time graph (later).
 - **Settings:** capture backend, play side (1P/2P), data folder, bindings, GIF, theme,
-  skin folder and note style, table updates.
+  table updates.
 - Respects `prefers-reduced-motion`.
 
 ### 5.9 Skins
-- **Folder:** `skins/<name>/` (setting `skin_dir`, default `skins/WMII_FHD`). The app
-  serves only image files under that folder, at `/skin/...`.
-- **Only the notes are used** (user, 2026-11-23): `play/parts/notes/<style>.png`
-  (default, light, pastel, photon, simple). Boxes (x, y, w, h): scratch (94, 0, 90, 19),
-  white (187, 0, 52, 19), black (241, 0, 40, 19).
-- **Lane sizes** follow the skin: white keys 68, black keys 52, scratch 120, with 4 px
-  gaps. The lane is 576 wide.
-- **Upward motion:** the skin's notes are drawn to fall toward the judge line. Here they
-  rise from it. The sprites are symmetrical, so they're used as they are.
-- **Missing or broken skin:** with no skin, or a missing file, the notes are drawn as
-  plain bars and the settings page shows a warning. The page never breaks.
+- **Not used** (user, 2026-11-23). The notes looked better drawn, so the whole lane,
+  notes included, is drawn by the page. There are no skin settings or skin routes.
+- The `skins/` folder stays gitignored (except `skins/.gitkeep`) so the user's local
+  copy of WMII_FHD can live there without being committed.
 
 ## 6. Development and delivery
 
@@ -335,8 +331,7 @@ capture work.
 - The button counter shows press counts only, with scratch up and down as two
   buttons. Counts reset when the app starts and from a reset button (user,
   2026-11-23).
-- The lane uses only the note images from the local skin in `skins/`, which is
-  gitignored. The rest of the lane is drawn (user, 2026-11-23).
+- The lane is fully drawn; no skin images are used (user, 2026-11-23).
 - The layout is a 3×4 grid with personal best and recent plays panels (user,
   2026-11-23).
 - SP only, with 1P/2P as a setting (user, 2026-11-23).

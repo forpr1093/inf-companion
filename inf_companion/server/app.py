@@ -19,7 +19,6 @@ from starlette.websockets import WebSocket, WebSocketDisconnect
 import inf_companion
 from inf_companion.events import EventBus, make_event
 from inf_companion.input.model import TARGETS, DeviceInfo
-from inf_companion.server.skin import list_skin, resolve_skin_file, skin_root
 from inf_companion.storage.db import BindingsRepo, SettingsRepo
 
 GIF_MAX_BYTES = 20 * 1024 * 1024
@@ -95,18 +94,6 @@ def create_app(ctx: AppContext) -> Starlette:
             return JSONResponse({"error": "no GIF uploaded"}, status_code=404)
         return FileResponse(gif_path, media_type="image/gif", headers={"Cache-Control": "no-store"})
 
-    def current_skin() -> Path:
-        return skin_root(ctx.settings.get_all()["skin_dir"])
-
-    async def get_skin_info(request: Request) -> Response:
-        return JSONResponse(list_skin(current_skin()))
-
-    async def get_skin_file(request: Request) -> Response:
-        path = resolve_skin_file(current_skin(), request.path_params["rel"])
-        if path is None:
-            return PlainTextResponse("not found", status_code=404)
-        return FileResponse(path, media_type="image/png", headers={"Cache-Control": "max-age=3600"})
-
     async def ws_endpoint(ws: WebSocket) -> None:
         await ws.accept()
         sub = ctx.bus.subscribe()
@@ -146,8 +133,6 @@ def create_app(ctx: AppContext) -> Starlette:
         Route("/api/bindings", get_bindings, methods=["GET"]),
         Route("/api/gif", get_gif, methods=["GET"]),
         Route("/api/gif", put_gif, methods=["PUT"]),
-        Route("/api/skin", get_skin_info, methods=["GET"]),
-        Route("/skin/{rel:path}", get_skin_file, methods=["GET"]),
         WebSocketRoute("/ws", ws_endpoint),
     ]
     if ctx.static_dir is not None and ctx.static_dir.is_dir():

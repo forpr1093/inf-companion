@@ -75,3 +75,8 @@ def test_counts_reset_without_input_sends_zeros(client):
         ws.send_json({"type": "counts_reset"})
         ev = ws.receive_json()
         assert ev["type"] == "counts" and ev["counts"] == {t: 0 for t in TARGETS}
+
+
+def test_skin_routes_are_gone(client):
+    assert client.get("/api/skin").status_code == 404
+    assert client.get("/skin/play/parts/notes/default.png").status_code == 404

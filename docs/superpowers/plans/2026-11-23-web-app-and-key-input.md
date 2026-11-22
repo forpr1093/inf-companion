@@ -901,6 +901,13 @@ test("panel events land in stores", () => { /* applyEvent chart / personal_best 
 - [ ] **Step 5:** Check `/?demo=1` at 1920×1080 in 1P and 2P, dark and light. Then **stop for the user's design check.**
 - [ ] **Step 6:** Build, then commit `feat(web): 3x4 grid with now playing, personal best, recent plays`.
 
+## Revision 3 (user, 2026-11-23, after reviewing Tasks 16–17)
+
+- **No skin at all.** The notes are drawn, so the skin settings (`skin_dir`, `skin_notes`), `/api/skin`, `/skin/...`, `server/skin.py` and `web/src/lib/lane/skin.ts` are removed. Settings are now `side`, `manual_bpm`, `beats_per_loop` and `theme`.
+- **Task 13:** no skin fields on the settings page.
+- **Review Focus #5** (skin path escape) no longer applies, since the route is gone. `test_skin_routes_are_gone` checks it stays gone.
+- **Narrow windows (≤ 1440 px wide):** 5 rows, with the GIF row above the counter row, both spanning columns 2–3. The two rows share the height. The counter area is a CSS size container, and the counter's box size is `clamp(20px, min(9cqi, 27cqh), 92px)`.
+
 ## Roadmap: Plans 2 and 3 (written after this plan ships)
 
 Each gets its own writing-plans pass, because each depends on results that don't exist yet: spike numbers and fixture screenshots.

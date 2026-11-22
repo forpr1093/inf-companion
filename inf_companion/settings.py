@@ -1,6 +1,5 @@
 """User settings: defaults and validation. Stored as JSON values in SQLite."""
 
-import re
 from typing import Any
 
 DEFAULT_SETTINGS: dict[str, Any] = {
@@ -8,12 +7,8 @@ DEFAULT_SETTINGS: dict[str, Any] = {
     "manual_bpm": 150,
     "beats_per_loop": 4,
     "theme": "dark",
-    "skin_dir": "skins/WMII_FHD",
-    "skin_notes": "default",
 }
 
-_STEM = re.compile(r"^[A-Za-z0-9_\-]{1,64}$")
-_SKIN_STEMS = ("skin_notes",)
 
 
 def _is_number(v: Any) -> bool:
@@ -29,10 +24,6 @@ def _check(key: str, v: Any) -> bool:
         return isinstance(v, int) and not isinstance(v, bool) and 1 <= v <= 64
     if key == "theme":
         return v in ("dark", "light")
-    if key == "skin_dir":
-        return isinstance(v, str) and v.strip() != ""
-    if key in _SKIN_STEMS:
-        return isinstance(v, str) and bool(_STEM.match(v))
     return False
 
 

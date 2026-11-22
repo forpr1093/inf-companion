@@ -15,7 +15,7 @@ def test_defaults_then_update_persists(tmp_path):
 
 @pytest.mark.parametrize(
     "patch",
-    [{"side": "3P"}, {"manual_bpm": 0}, {"beats_per_loop": 1.5}, {"nope": 1}, {"skin_notes": "../x"}, {"skin_dir": ""},
+    [{"side": "3P"}, {"manual_bpm": 0}, {"beats_per_loop": 1.5}, {"nope": 1}, {"skin_dir": "skins/WMII_FHD"}, {"skin_notes": "default"},
      {"manual_bpm": True}, {"beats_per_loop": "4"}],
 )
 def test_invalid_patch_rejected_and_nothing_stored(tmp_path, patch):
@@ -26,8 +26,7 @@ def test_invalid_patch_rejected_and_nothing_stored(tmp_path, patch):
 
 
 def test_settings_keys_are_trimmed():
-    assert "orientation" not in DEFAULT_SETTINGS and "skin_frame" not in DEFAULT_SETTINGS
-    assert {"skin_dir", "skin_notes"} <= set(DEFAULT_SETTINGS)
+    assert set(DEFAULT_SETTINGS) == {"side", "manual_bpm", "beats_per_loop", "theme"}
 
 
 def test_legacy_stored_key_is_ignored(tmp_path):

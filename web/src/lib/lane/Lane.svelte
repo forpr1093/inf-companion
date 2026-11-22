@@ -1,16 +1,16 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import { Application, Container, Graphics, Sprite } from "pixi.js";
-  import { settings, skinMissing, subscribeKeys, subscribeReset } from "../stores";
+  import { Application, Container, Graphics } from "pixi.js";
+  import { settings, subscribeKeys, subscribeReset } from "../stores";
   import type { KeyEvent, Lane, Settings } from "../events";
   import { laneLayout, SKIN_W, type LaneGeom } from "./layout";
   import { NoteField } from "./notes";
-  import { loadSkin, NOTE_H, skinUrls, spriteKind, type SkinTextures } from "./skin";
 
   const debug = new URLSearchParams(location.search).has("debug");
   const BEAM_FADE_MS = 200;
   const JUDGE = 0.8; // judge line at 80% of the height
   const BEAM_BANDS = 14;
+  const NOTE_H = 19; // note height in lane units (the lane is 576 wide)
 
   let host: HTMLDivElement;
   let latency = $state<{ mean: number; p95: number } | null>(null);
@@ -21,7 +21,6 @@
     const bg = new Graphics(); // lanes, dividers, judge line: redrawn on resize/theme
     const beamsG = new Graphics();
     const notesG = new Graphics();
-    const noteSprites = new Container();
     const capsG = new Graphics();
     const disc = new Container();
     const discG = new Graphics();
@@ -33,8 +32,6 @@
     let height = 0;
     let colors = readColors();
     let s: Settings | null = null;
-    let skin: SkinTextures | null = null;
-    let skinKey = "";
     let scratchDir = 0;
     let lastFrame = performance.now();
     let destroyed = false;
@@ -76,15 +73,12 @@
       discG.rect(-1.5, -r * 0.92, 3, r * 0.6).fill({ color: colors.white });
     }
 
-    async function refreshSkin(next: Settings) {
-      const urls = skinUrls(next);
-      const key = urls.notes;
-      if (key === skinKey) return;
-      skinKey = key;
-      const result = await loadSkin(urls);
-      if (destroyed || key !== skinKey) return;
-      skin = result.textures;
-      skinMissing.set(result.missing);
+    /** A note: slight glow, solid body, a bright band near the top, a darker base. */
+    function drawNote(x: number, y: number, w: number, h: number, color: string, alpha: number) {
+      notesG.rect(x - 1, y - 2, w + 2, h + 4).fill({ color, alpha: 0.22 * alpha });
+      notesG.roundRect(x + 1, y, w - 2, h, Math.min(3, h / 4)).fill({ color, alpha });
+      notesG.rect(x + 3, y + h * 0.16, w - 6, Math.max(1, h * 0.22)).fill({ color: "#ffffff", alpha: 0.55 * alpha });
+      notesG.rect(x + 1, y + h * 0.74, w - 2, h * 0.26).fill({ color: "#000000", alpha: 0.22 * alpha });
     }
 
     function render() {
@@ -113,7 +107,6 @@
 
       // Notes.
       notesG.clear();
-      let used = 0;
       const views = field.frame(now);
       if (!reduced.matches) {
         for (const n of views) {
@@ -121,30 +114,17 @@
           if (!l) continue;
           const yBottom = judgeY - n.bottom * judgeY;
           const yTop = Math.min(judgeY - n.top * judgeY, yBottom - minH);
-          if (skin) {
-            // Never stretch the sprite (its soft edges would smear): a hold is a drawn body
-            // with the note sprite at natural height on each end, like a charge note.
-            const tex = skin.note[spriteKind(n.lane)];
-            const len = yBottom - yTop;
-            const ends = len > minH * 4 ? [yTop, yBottom - minH] : [yBottom - minH];
-            if (ends.length === 2) {
-              notesG.rect(l.x + l.w * 0.1, yTop + minH / 2, l.w * 0.8, len - minH)
-                .fill({ color: colors[l.color], alpha: 0.55 * n.alpha });
-            }
-            for (const y of ends) {
-              let sp = noteSprites.children[used] as Sprite | undefined;
-              if (!sp) { sp = new Sprite(); noteSprites.addChild(sp); }
-              sp.texture = tex;
-              sp.visible = true;
-              sp.x = l.x; sp.y = y; sp.width = l.w; sp.height = minH; sp.alpha = n.alpha;
-              used++;
-            }
-          } else {
-            notesG.rect(l.x, yTop, l.w, yBottom - yTop).fill({ color: colors[l.color], alpha: n.alpha });
+          const len = yBottom - yTop;
+          const color = colors[l.color];
+          if (len > minH * 4) {
+            // Long note: a translucent body between two caps, like a charge note.
+            notesG.rect(l.x + l.w * 0.12, yTop + minH / 2, l.w * 0.76, len - minH).fill({ color, alpha: 0.45 * n.alpha });
+            notesG.rect(l.x + l.w / 2 - 1, yTop + minH, 2, len - minH * 2).fill({ color: "#ffffff", alpha: 0.35 * n.alpha });
+            drawNote(l.x, yTop, l.w, minH, color, n.alpha);
           }
+          drawNote(l.x, yBottom - minH, l.w, minH, color, n.alpha);
         }
       }
-      for (let i = used; i < noteSprites.children.length; i++) noteSprites.children[i].visible = false;
 
       // Key caps under the judge line; the scratch lane has the disc instead.
       capsG.clear();
@@ -190,7 +170,7 @@
       s = next;
       queueMicrotask(() => {
         colors = readColors();
-        if (ready) { relayout(); refreshSkin(next); }
+        if (ready) relayout();
       });
     });
     const ro = new ResizeObserver(() => { if (ready) { app.renderer.resize(host.clientWidth, host.clientHeight); relayout(); } });
@@ -199,10 +179,9 @@
       .then(() => {
         if (destroyed) { app.destroy(true); return; }
         host.appendChild(app.canvas);
-        app.stage.addChild(bg, beamsG, notesG, noteSprites, capsG, disc);
+        app.stage.addChild(bg, beamsG, notesG, capsG, disc);
         ready = true;
         relayout();
-        if (s) refreshSkin(s);
         ro.observe(host);
         app.ticker.add(render);
       });
