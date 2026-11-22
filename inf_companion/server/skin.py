@@ -2,14 +2,7 @@
 
 from pathlib import Path
 
-_PARTS = {
-    "notes": "play/parts/notes",
-    "frames": "play/parts/frame/Wide",
-    "beams": "play/parts/laser",
-    "flashes": "play/parts/keyflash",
-    "lanes": "play/parts/lane",
-    "turntables": "play/parts/turntable",
-}
+_PARTS = {"notes": "play/parts/notes"}
 
 
 def skin_root(skin_dir: str) -> Path:

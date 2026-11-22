@@ -8,18 +8,12 @@ DEFAULT_SETTINGS: dict[str, Any] = {
     "manual_bpm": 150,
     "beats_per_loop": 4,
     "theme": "dark",
-    "orientation": "auto",
     "skin_dir": "skins/WMII_FHD",
     "skin_notes": "default",
-    "skin_frame": "SpaceShip",
-    "skin_beam": "defalut",  # the skin's real file name
-    "skin_flash": "blue246red1357",
-    "skin_lane": "default",
-    "skin_turntable": "simpleBlue_whiteLine",
 }
 
 _STEM = re.compile(r"^[A-Za-z0-9_\-]{1,64}$")
-_SKIN_STEMS = ("skin_notes", "skin_frame", "skin_beam", "skin_flash", "skin_lane", "skin_turntable")
+_SKIN_STEMS = ("skin_notes",)
 
 
 def _is_number(v: Any) -> bool:
@@ -35,8 +29,6 @@ def _check(key: str, v: Any) -> bool:
         return isinstance(v, int) and not isinstance(v, bool) and 1 <= v <= 64
     if key == "theme":
         return v in ("dark", "light")
-    if key == "orientation":
-        return v in ("auto", "landscape", "portrait")
     if key == "skin_dir":
         return isinstance(v, str) and v.strip() != ""
     if key in _SKIN_STEMS:

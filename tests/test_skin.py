@@ -25,11 +25,8 @@ def test_symlink_out_of_skin_blocked(skin, tmp_path):
 
 
 def test_list_skin(skin, tmp_path):
-    info = list_skin(skin)
-    assert info["available"] is True and info["notes"] == ["default"] and info["frames"] == ["SpaceShip"]
-    assert info["beams"] == ["defalut"] and info["flashes"] == [] and info["turntables"] == []
-    missing = list_skin(tmp_path / "nope")
-    assert missing["available"] is False and missing["notes"] == []
+    assert list_skin(skin) == {"available": True, "notes": ["default"]}
+    assert list_skin(tmp_path / "nope") == {"available": False, "notes": []}
 
 
 def test_skin_http_404_and_200(client_with_skin):

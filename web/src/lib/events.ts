@@ -19,14 +19,8 @@ export interface Settings {
   manual_bpm: number;
   beats_per_loop: number;
   theme: "dark" | "light";
-  orientation: "auto" | "landscape" | "portrait";
   skin_dir: string;
   skin_notes: string;
-  skin_frame: string;
-  skin_beam: string;
-  skin_flash: string;
-  skin_lane: string;
-  skin_turntable: string;
 }
 
 export const DEFAULTS: Settings = {
@@ -34,14 +28,8 @@ export const DEFAULTS: Settings = {
   manual_bpm: 150,
   beats_per_loop: 4,
   theme: "dark",
-  orientation: "auto",
   skin_dir: "skins/WMII_FHD",
   skin_notes: "default",
-  skin_frame: "SpaceShip",
-  skin_beam: "defalut",
-  skin_flash: "blue246red1357",
-  skin_lane: "default",
-  skin_turntable: "simpleBlue_whiteLine",
 };
 
 export interface KeyEvent { type: "key_down" | "key_up"; lane: Lane; dir: "up" | "down" | null; t: number; at: number; }

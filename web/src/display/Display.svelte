@@ -11,7 +11,7 @@
 
   let portraitMedia = $state(false);
   const orientation = $derived(
-    $settings.orientation === "auto" ? (portraitMedia ? "portrait" : "landscape") : $settings.orientation,
+    portraitMedia ? "portrait" : "landscape",
   );
 
   onMount(() => {

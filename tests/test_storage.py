@@ -25,6 +25,24 @@ def test_invalid_patch_rejected_and_nothing_stored(tmp_path, patch):
     assert s.get_all() == DEFAULT_SETTINGS
 
 
+def test_settings_keys_are_trimmed():
+    assert "orientation" not in DEFAULT_SETTINGS and "skin_frame" not in DEFAULT_SETTINGS
+    assert {"skin_dir", "skin_notes"} <= set(DEFAULT_SETTINGS)
+
+
+def test_legacy_stored_key_is_ignored(tmp_path):
+    conn = open_db(tmp_path / "c.sqlite3")
+    conn.execute("INSERT INTO settings (key, value) VALUES ('skin_frame', '\"SpaceShip\"')")
+    conn.commit()
+    assert "skin_frame" not in SettingsRepo(conn).get_all()
+
+
+@pytest.mark.parametrize("patch", [{"orientation": "auto"}, {"skin_frame": "SpaceShip"}])
+def test_removed_settings_rejected(tmp_path, patch):
+    with pytest.raises(ValueError):
+        SettingsRepo(open_db(tmp_path / "c.sqlite3")).update(patch)
+
+
 def test_partial_invalid_patch_stores_nothing(tmp_path):
     s = SettingsRepo(open_db(tmp_path / "c.sqlite3"))
     with pytest.raises(ValueError):
