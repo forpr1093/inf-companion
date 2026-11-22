@@ -15,7 +15,7 @@ built for one player at home, not for streaming:
 - **Looks first.** It shows a 2DX-style lane where a note floats up from each button
   press, a button counter like the user's reference screenshot, a looping GIF whose
   speed follows the song's BPM, plus now playing, personal best and recent plays. The
-  lane's notes come from a local beatoraja skin (WMII_FHD) when one is present.
+  whole lane, notes included, is drawn by the page.
 - **Local play records.** It follows game state (song select, play, result) and keeps a
   local history of results, with score differences and graphs.
 
