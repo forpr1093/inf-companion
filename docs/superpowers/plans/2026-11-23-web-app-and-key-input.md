@@ -916,8 +916,8 @@ test("panel events land in stores", () => { /* applyEvent chart / personal_best 
 
 ## Revision 5 (user, 2026-11-23)
 
-- **One layout at every size.** The 5-row breakpoint is removed. Areas are `"lane now now" "lane gif pb" "lane counter counter" "recent recent recent"`, with columns `auto 2fr 5fr` (user revised from 1:3) and rows `2fr 3fr 2fr auto`. The 2P mirror is `"now now lane" "gif pb lane" "counter counter lane"`.
-- **Personal best stack:** a muted "Personal best" header, clear type (small), DJ grade from `djLevel` (large), EX score (medium) with the `djBorder` label beside it (small), then misses and last played (small).
+- **One layout at every size.** The 5-row breakpoint is removed. Areas are `"lane now now" "lane gif pb" "lane counter counter" "recent recent recent"`, with columns `auto 3fr 5fr` (user revised from 1:3, then 2:5) and rows `2fr 3fr 2fr auto`. The 2P mirror is `"now now lane" "gif pb lane" "counter counter lane"`.
+- **Personal best stack:** a muted "Personal best" header, clear type (small), DJ grade from `djLevel` (large), EX score (medium) with the `djBorder` label beside it (small), then misses (small), and last played (small) pinned to the bottom right.
 - **Task 14:** the GIF fills the `gif` cell and is fitted inside it (contain), so it's not always square.
 
 ## Roadmap: Plans 2 and 3 (written after this plan ships)

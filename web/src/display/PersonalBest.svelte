@@ -14,7 +14,7 @@
 
 <!--
   Stack (user, 2026-11-23): "Personal best" header / clear type (small) / grade (large) / score (medium) with the
-  border difference beside it (small) / misses and last played (small).
+  border difference beside it (small) / misses (small) / last played (small, bottom right).
 -->
 <div class="panel"><div class="inner">
   {#if !$nowPlaying || !$personalBest}
@@ -25,10 +25,10 @@
     <p class="clear" style:color={LAMP_VAR[$personalBest.lamp] ?? "var(--text)"}>{$personalBest.lamp}</p>
     <p class="grade">{grade ?? "—"}</p>
     <p class="score">{$personalBest.score}{#if border}<span class="diff">{border.label}</span>{/if}</p>
-    <div class="meta">
-      {#if $personalBest.miss_count != null}<p>{$personalBest.miss_count} miss{$personalBest.miss_count === 1 ? "" : "es"}</p>{/if}
-      {#if $personalBest.last_played}<p>Last played {$personalBest.last_played}</p>{/if}
-    </div>
+    {#if $personalBest.miss_count != null}
+      <p class="meta">{$personalBest.miss_count} miss{$personalBest.miss_count === 1 ? "" : "es"}</p>
+    {/if}
+    {#if $personalBest.last_played}<p class="meta last">Last played {$personalBest.last_played}</p>{/if}
   {/if}
 </div></div>
 
@@ -43,6 +43,7 @@
   .score { font-size: clamp(1.3rem, min(15cqh, 7cqi), 3rem); font-weight: 600; font-stretch: 88%; line-height: 1.1;
     font-variant-numeric: tabular-nums; }
   .diff { margin-left: 0.6em; font-size: 0.5em; font-weight: 500; color: var(--muted); }
-  .meta { display: flex; flex-direction: column; gap: 0.15em; margin-top: 0.3em;
-    font-size: clamp(0.8rem, 6cqh, 1.1rem); color: var(--muted); }
+  .meta { margin-top: 0.3em; font-size: clamp(0.8rem, 6cqh, 1.1rem); color: var(--muted); }
+  /* Last played sits at the very end of the panel, on the right. */
+  .last { margin-top: auto; align-self: flex-end; }
 </style>

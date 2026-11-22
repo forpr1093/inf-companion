@@ -206,7 +206,7 @@ Windows gaming PC                                      Second monitor
   ┌────────────┬──────────────────────────────┐
   │            │ Now playing                  │  2
   │            ├───────┬──────────────────────┤
-  │ IIDX lane  │  GIF  │ Personal best        │  3   (GIF : personal best = 2 : 5 wide)
+  │ IIDX lane  │  GIF  │ Personal best        │  3   (GIF : personal best = 3 : 5 wide)
   │ (rows 1–3) ├───────┴──────────────────────┤
   │            │ Button counter               │  2
   ├────────────┴──────────────────────────────┤
@@ -245,7 +245,8 @@ Windows gaming PC                                      Second monitor
 - **Personal best** (user, 2026-11-23): for the current chart, the higher of the
   official CSV import and the user's own recorded plays. It's a stack: a "Personal best"
   header, clear type (small), DJ grade (large), EX score (medium) with the border difference beside it
-  (small), then miss count and last played (small). With no record it
+  (small), then miss count (small), and last played (small) at the panel's bottom
+  right. With no record it
   shows "Not played yet". With no chart selected it shows "No song selected".
 - **Recent plays** (user, 2026-11-23), modelled on the user's screenshot, newest first.
   Each row shows:
