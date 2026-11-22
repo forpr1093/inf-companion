@@ -77,3 +77,12 @@ body {
   padding: 18px 22px;
   clip-path: inherit;
 }
+
+/* Panel header ("Personal best", "Recent plays"): same size and place in every panel. */
+.panel-title {
+  margin: 0 0 6px;
+  color: var(--muted);
+  font-size: 0.95rem;
+  font-weight: 400;
+  font-stretch: 112%;
+}

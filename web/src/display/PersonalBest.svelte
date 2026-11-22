@@ -18,10 +18,10 @@
 -->
 <div class="panel"><div class="inner">
   {#if !$nowPlaying || !$personalBest}
-    <p class="label">Personal best</p>
+    <p class="panel-title">Personal best</p>
     <p class="empty">{$nowPlaying ? "Not played yet" : "No song selected"}</p>
   {:else}
-    <p class="label">Personal best</p>
+    <p class="panel-title">Personal best</p>
     <p class="clear" style:color={LAMP_VAR[$personalBest.lamp] ?? "var(--text)"}>{$personalBest.lamp}</p>
     <p class="grade">{grade ?? "—"}</p>
     <p class="score">{$personalBest.score}{#if border}<span class="diff">{border.label}</span>{/if}</p>
@@ -35,9 +35,8 @@
 <style>
   /* The section around this panel is a size container: text scales with the cell. */
   .panel { height: 100%; }
-  .inner { display: flex; flex-direction: column; justify-content: center; gap: 0.2em; }
+  .inner { display: flex; flex-direction: column; gap: 0.2em; }
   p { margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .label { color: var(--muted); font-size: clamp(0.8rem, 5.5cqh, 1rem); font-weight: 400; font-stretch: 112%; }
   .empty { margin-top: 0.3em; font-size: clamp(1.1rem, 10cqh, 1.8rem); color: var(--muted); }
   .clear { font-size: clamp(0.85rem, 7cqh, 1.25rem); font-weight: 600; font-stretch: 105%; }
   .grade { font-size: clamp(2.2rem, min(30cqh, 14cqi), 6rem); font-weight: 700; font-stretch: 90%; line-height: 1; }

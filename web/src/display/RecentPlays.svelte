@@ -6,7 +6,7 @@
 </script>
 
 <div class="panel recent"><div class="inner">
-  <p class="kicker">Recent plays</p>
+  <p class="panel-title">Recent plays</p>
   {#if $recentPlays.length === 0}
     <p class="empty">No plays yet</p>
   {:else}
@@ -30,7 +30,6 @@
 <style>
   .recent { height: 100%; }
   .recent .inner { overflow: hidden; }
-  .kicker { margin: 0 0 6px; color: var(--muted); font-size: 0.95rem; font-stretch: 112%; }
   .empty { margin: 0; font-size: 1.2rem; color: var(--muted); }
   table { width: 100%; border-collapse: collapse; font-size: 1.15rem; }
   tr + tr td { border-top: 1px solid var(--line); }
