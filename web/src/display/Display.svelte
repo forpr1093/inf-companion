@@ -3,6 +3,7 @@
   import { emitKey, settings, status } from "../lib/stores";
   import { devKeyboard, startDemo } from "../lib/demo";
   import Lane from "../lib/lane/Lane.svelte";
+  import Counter from "../lib/counter/Counter.svelte";
 
   const params = new URLSearchParams(location.search);
   const demo = params.has("demo");
@@ -35,7 +36,7 @@
   </section>
 
   <section class="counter-area" aria-label="Button counter">
-    <div class="placeholder">counter</div>
+    <Counter />
   </section>
 
   <aside class="cards">

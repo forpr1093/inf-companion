@@ -121,8 +121,13 @@ def create_app(ctx: AppContext) -> Starlette:
             try:
                 while True:
                     msg = await ws.receive_json()
-                    if ctx.input and isinstance(msg, dict):
+                    if not isinstance(msg, dict):
+                        continue
+                    if ctx.input:
                         ctx.input.handle_client(msg)
+                    elif msg.get("type") == "counts_reset":
+                        # No controller reading (--no-input): counts are always zero.
+                        ctx.bus.publish(make_event("counts", counts={t: 0 for t in TARGETS}))
             except (WebSocketDisconnect, json.JSONDecodeError, RuntimeError):
                 pass
             finally:

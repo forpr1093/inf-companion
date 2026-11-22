@@ -67,3 +67,11 @@ def test_gif_too_large_413(client):
 def test_root_without_build_says_not_built(client):
     r = client.get("/")
     assert r.status_code == 200 and "not built" in r.text
+
+
+def test_counts_reset_without_input_sends_zeros(client):
+    with client.websocket_connect("/ws") as ws:
+        ws.receive_json()
+        ws.send_json({"type": "counts_reset"})
+        ev = ws.receive_json()
+        assert ev["type"] == "counts" and ev["counts"] == {t: 0 for t in TARGETS}

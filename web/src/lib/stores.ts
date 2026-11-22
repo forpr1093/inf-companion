@@ -1,5 +1,6 @@
 import { writable, get } from "svelte/store";
 import { connect, type Status } from "./ws";
+import { applyKey } from "./counter/counts";
 import { DEFAULTS, emptyCounts, type Binding, type Counts, type DeviceInfo, type KeyEvent, type ServerEvent, type Settings, type Target } from "./events";
 
 export const status = writable<Status>("connecting");
@@ -20,7 +21,10 @@ const keyListeners = new Set<KeyFn>();
 const resetListeners = new Set<() => void>();
 const eventListeners = new Set<(e: ServerEvent) => void>();
 
-export function emitKey(e: KeyEvent): void { for (const fn of keyListeners) fn(e); }
+export function emitKey(e: KeyEvent): void {
+  if (e.type === "key_down") counts.update(c => applyKey(c, e));
+  for (const fn of keyListeners) fn(e);
+}
 export function subscribeKeys(fn: KeyFn): () => void { keyListeners.add(fn); return () => keyListeners.delete(fn); }
 export function subscribeReset(fn: () => void): () => void { resetListeners.add(fn); return () => resetListeners.delete(fn); }
 export function subscribeEvents(fn: (e: ServerEvent) => void): () => void { eventListeners.add(fn); return () => eventListeners.delete(fn); }
