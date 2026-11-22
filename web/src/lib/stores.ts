@@ -11,6 +11,8 @@ export const gifVersion = writable(0);
 export const bindProgress = writable<{ target: Target; index: number; total: number } | null>(null);
 export const counts = writable<Counts>(emptyCounts());
 export const lastError = writable<string | null>(null);
+/** Skin files that failed to load (set by the lane). Empty when the skin loaded fully. */
+export const skinMissing = writable<string[]>([]);
 
 // Key events are too frequent for Svelte stores: plain pub/sub.
 type KeyFn = (e: KeyEvent) => void;
