@@ -30,9 +30,9 @@
   <section class="gif-area" aria-label="Loop"><GifPlayer /></section>
   <section class="recent"><RecentPlays /></section>
   <footer class="status-bar">
-    <span class="stat"><span class="k">Screen</span> {$screen ?? "—"}</span>
-    <span class="stat" class:bad={$captureStatus.state !== "running"} title={$captureStatus.message ?? ""}>
-      <span class="k">Capture</span> {$captureStatus.state}
+    <span class="stat"><span class="k">Screen:</span> {$screen ?? "—"}</span>
+    <span class="stat" class:ok={$captureStatus.state === "running"} class:bad={$captureStatus.state !== "running"} title={$captureStatus.message ?? ""}>
+      <span class="k">Capture:</span> {$captureStatus.state}
     </span>
     <a class="to-settings" href="#/settings">
       <svg viewBox="0 0 24 24" aria-hidden="true" width="18" height="18" fill="none" stroke="currentColor"
@@ -90,6 +90,7 @@
     font-size: 1rem; color: var(--text); white-space: nowrap;
   }
   .stat .k { color: var(--muted); margin-right: 4px; }
+  .stat.ok { color: var(--counter-idle); }
   .stat.bad { color: var(--danger); }
   .stat.bad .k { color: var(--danger); opacity: 0.8; }
   .to-settings {
