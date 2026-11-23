@@ -12,7 +12,7 @@
   const BEAM_BANDS = 14;
   const NOTE_H = 19;
   const KEY_LN_MS = 100;     // a key held this long becomes a long note
-  const SCRATCH_LN_MS = 220; // the same for scratch
+  const SCRATCH_LN_MS = 160; // the same for scratch
   const TOP_FADE = 0.18;     // top 18% of the lane: notes fade out as they leave
   const BAND_PX = 4;         // band height inside the top fade zone
   const MARK_GAP_PX = 64;    // spacing of the scrolling marks on long notes (lane units) // note height in lane units (the lane is 576 wide)

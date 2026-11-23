@@ -929,7 +929,7 @@ test("panel events land in stores", () => { /* applyEvent chart / personal_best 
   - Recent plays shows as many whole 40 px rows as fit.
 - **Personal best:** fixed rem text sizes, no container-relative sizing.
 - **NoteField:**
-  - `longNoteMs(lane)`: the lane uses 100 ms for keys and 220 ms for scratch (user's values). The length counts only time held past the threshold.
+  - `longNoteMs(lane)`: the lane uses 100 ms for keys and 160 ms for scratch (user's values). The length counts only time held past the threshold.
   - Long notes are not capped. They extend past the lane's top, fade through the top 18% of the lane, and have marks that scroll up the body at note speed. The earlier `fadeOutMs` was replaced after user feedback: the user meant "moving out", not "disappearing".
 
 ## Roadmap: Plans 2 and 3 (written after this plan ships)
