@@ -69,15 +69,17 @@ def capture_loop(source, classify_fn: Callable[[np.ndarray], str], emit: Callabl
         sleep(max(0.0, 1.0 / fps - (clock() - started)))
 
 
-def _child(kind: str, source_path: str, tables_dir: str, side: str, q, stop, fixed_fps: float | None) -> None:
+def _child(kind: str, source_path: str, tables_dir: str, side: str, q, stop, fixed_fps: float | None,
+           record_dir: str | None = None) -> None:
     try:
-        _run_child(kind, source_path, tables_dir, side, q, stop, fixed_fps)
+        _run_child(kind, source_path, tables_dir, side, q, stop, fixed_fps, record_dir)
     except Exception as e:  # tell the app instead of dying with only a traceback
         q.put({"type": "capture_status", "state": "off", "message": f"Capture stopped: {type(e).__name__}: {e}"})
         raise
 
 
-def _run_child(kind: str, source_path: str, tables_dir: str, side: str, q, stop, fixed_fps: float | None) -> None:
+def _run_child(kind: str, source_path: str, tables_dir: str, side: str, q, stop, fixed_fps: float | None,
+               record_dir: str | None = None) -> None:
     from inf_companion.recog.screen import classify, play_reference_notice
 
     tables = load_tables(Path(tables_dir))
@@ -91,9 +93,18 @@ def _run_child(kind: str, source_path: str, tables_dir: str, side: str, q, stop,
         raise ValueError(f"unknown capture backend {kind!r}")
     reader, reading_notice = _make_reader(tables, side)
     notice = "; ".join(n for n in (play_reference_notice(side), reading_notice) if n) or None
+    on_frame = reader.on_frame
+    if record_dir:
+        from inf_companion.capture.recorder import FrameRecorder
+        recorder = FrameRecorder(Path(record_dir))
+
+        def on_frame(frame, screen):
+            message = recorder.offer(frame, screen)
+            status = [{"type": "capture_status", "state": "running", "message": message}] if message else []
+            return status + reader.on_frame(frame, screen)
     try:
         capture_loop(source, lambda f: classify(f, tables, side), q.put, stop, fixed_fps=fixed_fps,
-                     notice=notice, on_frame=reader.on_frame)
+                     notice=notice, on_frame=on_frame)
     finally:
         source.close()
 
@@ -164,7 +175,8 @@ class CaptureHandle:
                 self.process.terminate()
 
 
-def start_capture(kind: str, source_path, tables_dir, side: str, bus, fixed_fps: float | None = None) -> CaptureHandle:
+def start_capture(kind: str, source_path, tables_dir, side: str, bus, fixed_fps: float | None = None,
+                  record_dir: str | None = None) -> CaptureHandle:
     handle = CaptureHandle()
 
     def publish(msg: dict) -> None:
@@ -179,7 +191,7 @@ def start_capture(kind: str, source_path, tables_dir, side: str, bus, fixed_fps:
 
     ctx = mp.get_context("spawn")
     q, stop = ctx.Queue(), ctx.Event()
-    proc = ctx.Process(target=_child, args=(kind, str(source_path), str(tables_dir), side, q, stop, fixed_fps),
+    proc = ctx.Process(target=_child, args=(kind, str(source_path), str(tables_dir), side, q, stop, fixed_fps, record_dir),
                        name="inf-companion-capture", daemon=True)
     proc.start()
 

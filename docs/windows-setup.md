@@ -76,6 +76,29 @@ says the tables are missing or unusable.
 - Only the 1P play screen is recognised for now. If you play 2P, the status says play
   detection is off until 2P screenshots are calibrated.
 
+## What the page reads from the game
+
+- **Song select:** Now playing shows the title, difficulty, level and note count. Personal
+  best shows the best score, clear lamp and miss count the game displays.
+- **Result:** the app reads the score, lamp, DJ level, miss count and judgments, ready for
+  play history in a later update.
+- Not read yet: BPM and artist. They need screenshots to learn from (see below).
+
+## Recording screenshots
+
+To help calibrate BPM, artist and other screens, let the app save screenshots while you
+play:
+
+```powershell
+uv run inf-companion --record D:\inf-record
+```
+
+- Screenshots go to `D:\inf-record\<screen>\` (`music_select`, `play`, `result`, `unknown`,
+  …). It saves at most one a second, skips frames that look the same, and stops after 3000.
+- Scroll through about 10 songs on song select (different BPMs and difficulties), play a
+  few, and stay on each result screen for a couple of seconds.
+- Zip the folder and bring it back. Delete it after; it's only for calibration.
+
 ## Update
 
 ```powershell

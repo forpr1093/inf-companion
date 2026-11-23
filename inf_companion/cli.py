@@ -18,6 +18,8 @@ def parse_args(argv: list[str] | None) -> argparse.Namespace:
     p.add_argument("--capture", choices=["auto", "off", "dxcam", "replay"], default="auto",
                    help="screen capture backend (default auto: dxcam on Windows, off elsewhere)")
     p.add_argument("--source", default=None, help="replay: folder of screenshots or one image")
+    p.add_argument("--record", default=None, metavar="DIR",
+                   help="save labelled screenshots to DIR/<screen>/ while capturing (for calibration)")
     p.add_argument("--replay-fps", type=float, default=None, help="replay: frames per second (default: adaptive)")
     args = p.parse_args(argv)
     if args.capture == "auto":
@@ -63,7 +65,8 @@ def main(argv: list[str] | None = None) -> int:
             print("--capture replay needs --source <folder of screenshots>")
             return 2
         capture = start_capture(args.capture, args.source, Path(args.tables_dir).resolve(),
-                                ctx.settings.get_all()["side"], ctx.bus, fixed_fps=args.replay_fps)
+                                ctx.settings.get_all()["side"], ctx.bus, fixed_fps=args.replay_fps,
+                                record_dir=args.record)
         ctx.capture = capture
     print(f"inf-companion {inf_companion.__version__}: data in {data_dir}")
     print(f"open http://{args.host}:{args.port}/")
