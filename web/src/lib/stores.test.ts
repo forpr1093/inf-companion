@@ -31,3 +31,16 @@ test("screen and capture status come from hello and live events", () => {
   expect(get(screen)).toBe("play");
   expect(get(captureStatus)).toEqual({ state: "off", message: "tables missing" });
 });
+
+import { nowPlaying, personalBest } from "./stores";
+
+test("hello restores the chart and personal best; null leaves demo data alone", () => {
+  nowPlaying.set(null); personalBest.set(null);
+  const chart = { title: "Mermaid girl", artist: null, difficulty: "HYPER", level: 8, bpm: null, notes: 856 };
+  const best = { score: 1437, notes: 856, lamp: "HARD CLEAR", miss_count: 8, last_played: null, source: "official" };
+  applyEvent(hello({ chart, personal_best: best }));
+  expect(get(nowPlaying)).toEqual(chart);
+  expect(get(personalBest)).toEqual(best);
+  applyEvent(hello({ chart: null, personal_best: null }));
+  expect(get(nowPlaying)).toEqual(chart);
+});

@@ -30,7 +30,8 @@ export const DEFAULTS: Settings = {
 
 export type Difficulty = "BEGINNER" | "NORMAL" | "HYPER" | "ANOTHER" | "LEGGENDARIA";
 
-export interface Chart { title: string; artist: string | null; difficulty: Difficulty; level: number; bpm: number | null; notes: number | null; }
+/** title is null when the song isn't in the recognition tables yet. */
+export interface Chart { title: string | null; artist: string | null; difficulty: Difficulty; level: number | null; bpm: number | null; notes: number | null; }
 
 export interface PersonalBest {
   score: number; notes: number | null; lamp: string; miss_count: number | null;
@@ -50,7 +51,7 @@ export interface KeyEvent { type: "key_down" | "key_up"; lane: Lane; dir: "up" |
 export type ServerEvent =
   | { type: "hello"; at: number; version: string; settings: Settings; devices: DeviceInfo[]; bindings: Record<string, Binding>; has_gif: boolean; counts: Counts;
       binding: { target: Target; index: number; total: number } | null; gif_version: number;
-      screen: Screen | null; capture_status: CaptureStatus }
+      screen: Screen | null; capture_status: CaptureStatus; chart?: Chart | null; personal_best?: PersonalBest | null }
   | { type: "settings"; at: number; settings: Settings }
   | { type: "devices"; at: number; devices: DeviceInfo[] }
   | KeyEvent

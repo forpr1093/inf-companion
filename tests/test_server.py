@@ -159,3 +159,21 @@ def test_hello_reports_capture_state(ctx):
     with TestClient(create_app(ctx)) as c, c.websocket_connect("/ws") as ws:
         h = ws.receive_json()
         assert h["screen"] == "result" and h["capture_status"] == {"state": "running"}
+
+
+def test_hello_carries_chart(ctx):
+    from starlette.testclient import TestClient
+    from inf_companion.server.app import create_app
+    with TestClient(create_app(ctx)) as c, c.websocket_connect("/ws") as ws:
+        h = ws.receive_json()
+        assert h["chart"] is None and h["personal_best"] is None
+
+    class FakeCapture:
+        def state(self):
+            return {"screen": "music_select", "capture_status": {"state": "running"},
+                    "chart": {"title": "Mermaid girl"}, "personal_best": {"score": 1437}}
+
+    ctx.capture = FakeCapture()
+    with TestClient(create_app(ctx)) as c, c.websocket_connect("/ws") as ws:
+        h = ws.receive_json()
+        assert h["chart"] == {"title": "Mermaid girl"} and h["personal_best"] == {"score": 1437}

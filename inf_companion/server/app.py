@@ -61,7 +61,8 @@ def create_app(ctx: AppContext) -> Starlette:
             counts=ctx.input.counts() if ctx.input else {t: 0 for t in TARGETS},
             binding=ctx.input.binding_state() if ctx.input else None,
             gif_version=ctx.gif_version,
-            **(ctx.capture.state() if ctx.capture else {"screen": None, "capture_status": {"state": "off"}}),
+            **({"screen": None, "capture_status": {"state": "off"}, "chart": None, "personal_best": None}
+               | (ctx.capture.state() if ctx.capture else {})),
         )
 
     async def get_settings(request: Request) -> Response:

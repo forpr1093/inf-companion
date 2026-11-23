@@ -43,7 +43,8 @@ class StableScreen:
 
 def capture_loop(source, classify_fn: Callable[[np.ndarray], str], emit: Callable[[dict], None], stop,
                  clock: Callable[[], float] = time.monotonic, sleep: Callable[[float], None] = time.sleep,
-                 fixed_fps: float | None = None, notice: str | None = None) -> None:
+                 fixed_fps: float | None = None, notice: str | None = None,
+                 on_frame: Callable[[np.ndarray, str | None], list[dict]] | None = None) -> None:
     stable = StableScreen()
     status = None
     while not stop.is_set():
@@ -61,6 +62,9 @@ def capture_loop(source, classify_fn: Callable[[np.ndarray], str], emit: Callabl
         changed = stable.feed(classify_fn(frame))
         if changed is not None:
             emit({"type": "screen", "screen": changed})
+        if on_frame is not None:
+            for msg in on_frame(frame, stable.current):
+                emit(msg)
         fps = fixed_fps or RATE_FPS["play" if stable.current == "play" else "default"]
         sleep(max(0.0, 1.0 / fps - (clock() - started)))
 
@@ -85,11 +89,34 @@ def _run_child(kind: str, source_path: str, tables_dir: str, side: str, q, stop,
         source = open_dxcam()
     else:
         raise ValueError(f"unknown capture backend {kind!r}")
+    reader, reading_notice = _make_reader(tables, side)
+    notice = "; ".join(n for n in (play_reference_notice(side), reading_notice) if n) or None
     try:
         capture_loop(source, lambda f: classify(f, tables, side), q.put, stop, fixed_fps=fixed_fps,
-                     notice=play_reference_notice(side))
+                     notice=notice, on_frame=reader.on_frame)
     finally:
         source.close()
+
+
+def _make_reader(tables, side: str):
+    """The screen reader, with whichever tables are present; a message says what's off."""
+    from inf_companion.recog.reader import Reader
+    from inf_companion.recog.result import ResultReader
+    from inf_companion.recog.select import SelectReader
+
+    off = []
+    try:
+        select = SelectReader(tables)
+    except TablesError:
+        select = None
+        off.append("song select")
+    try:
+        result = ResultReader(tables)
+    except TablesError:
+        result = None
+        off.append("result")
+    notice = f"Reading {' and '.join(off)} is off: tables missing (run tools/convert_tables.py)" if off else None
+    return Reader(select, result, tables.notesradar, side), notice
 
 
 def exit_status(exitcode: int | None, last: dict) -> dict | None:
@@ -104,11 +131,29 @@ class CaptureHandle:
     process: Any = None
     screen: str | None = None
     status: dict = field(default_factory=lambda: {"state": "off"})
+    chart: dict | None = None
+    personal_best: dict | None = None
+    result: dict | None = None
     _stop: Any = None
     _relay: threading.Thread | None = None
 
     def state(self) -> dict:
-        return {"screen": self.screen, "capture_status": self.status}
+        return {"screen": self.screen, "capture_status": self.status, "chart": self.chart,
+                "personal_best": self.personal_best}
+
+    def remember(self, msg: dict) -> None:
+        """Keep the latest of each message, for pages that connect later (hello)."""
+        kind = msg["type"]
+        if kind == "screen":
+            self.screen = msg["screen"]
+        elif kind == "capture_status":
+            self.status = {k: v for k, v in msg.items() if k != "type"}
+        elif kind == "chart":
+            self.chart = msg["chart"]
+        elif kind == "personal_best":
+            self.personal_best = msg["best"]
+        elif kind == "result":
+            self.result = msg["result"]
 
     def stop(self) -> None:
         if self._stop is not None:
@@ -123,10 +168,7 @@ def start_capture(kind: str, source_path, tables_dir, side: str, bus, fixed_fps:
     handle = CaptureHandle()
 
     def publish(msg: dict) -> None:
-        if msg["type"] == "screen":
-            handle.screen = msg["screen"]
-        elif msg["type"] == "capture_status":
-            handle.status = {k: v for k, v in msg.items() if k != "type"}
+        handle.remember(msg)
         bus.publish(make_event(**msg))
 
     try:

@@ -42,6 +42,8 @@ export function applyEvent(e: ServerEvent): void {
       hasGif.set(e.has_gif); counts.set(e.counts); bindProgress.set(e.binding ?? null);
       gifVersion.set(e.gif_version ?? 0);
       screen.set(e.screen ?? null); captureStatus.set(e.capture_status ?? { state: "off" });
+      // Only a real chart replaces what's shown (a null keeps demo data on ?demo pages).
+      if (e.chart) { nowPlaying.set(e.chart); personalBest.set(e.personal_best ?? null); }
       break;
     case "settings": settings.set(e.settings); break;
     case "devices": devices.set(e.devices); break;

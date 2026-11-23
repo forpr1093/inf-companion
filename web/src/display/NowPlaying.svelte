@@ -7,12 +7,12 @@
   {#if $nowPlaying}
     <div class="row">
       <span class="tag" style:color={DIFF_VAR[$nowPlaying.difficulty]} style:border-color={DIFF_VAR[$nowPlaying.difficulty]}>
-        {$nowPlaying.difficulty} {$nowPlaying.level}
+        {$nowPlaying.difficulty}{#if $nowPlaying.level != null} {$nowPlaying.level}{/if}
       </span>
       <span class="bpm"><b>{$nowPlaying.bpm ?? $settings.manual_bpm}</b> BPM{#if $nowPlaying.bpm == null}<span class="muted"> (manual)</span>{/if}</span>
     </div>
     <div class="song">
-      <p class="title">{$nowPlaying.title}</p>
+      {#if $nowPlaying.title}<p class="title">{$nowPlaying.title}</p>{:else}<p class="title muted">Unknown title</p>{/if}
       {#if $nowPlaying.artist}<p class="artist">{$nowPlaying.artist}</p>{/if}
     </div>
   {:else}

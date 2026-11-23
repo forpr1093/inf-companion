@@ -78,7 +78,8 @@ def test_app_runs_without_tables(tmp_path):
     assert handle.process is None
     off = [e for e in bus.events if e["type"] == "capture_status"][-1]
     assert off["state"] == "off" and "convert_tables.py" in off["message"]
-    assert handle.state() == {"screen": None, "capture_status": {"state": "off", "message": off["message"]}}
+    assert handle.state() == {"screen": None, "capture_status": {"state": "off", "message": off["message"]},
+                              "chart": None, "personal_best": None}
     handle.stop()  # safe when nothing was started
 
 
@@ -114,3 +115,26 @@ def test_child_exit_without_message_is_reported():
     assert exit_status(1, {"state": "running"}) == {"state": "off", "message": "capture process exited (code 1)"}
     assert exit_status(0, {"state": "running"}) is None
     assert exit_status(1, {"state": "off", "message": "x"}) is None
+
+
+def test_capture_loop_forwards_on_frame_messages():
+    emitted, seen = [], []
+
+    def on_frame(frame, screen):
+        seen.append(screen)
+        return [{"type": "chart", "chart": {"title": "x"}}] if screen == "music_select" else []
+
+    capture_loop(FakeSource(frames("aaa")), classify, emitted.append, StopAfter(3),
+                 clock=lambda: 0.0, sleep=lambda s: None, on_frame=on_frame)
+    assert seen == [None, None, "music_select"]
+    assert emitted[-1] == {"type": "chart", "chart": {"title": "x"}}
+
+
+def test_handle_keeps_last_chart_best_and_result():
+    from inf_companion.capture.process import CaptureHandle
+    h = CaptureHandle()
+    h.remember({"type": "chart", "chart": {"title": "x"}})
+    h.remember({"type": "personal_best", "best": None})
+    h.remember({"type": "result", "result": {"score": 1}})
+    assert h.state()["chart"] == {"title": "x"} and h.state()["personal_best"] is None
+    assert h.result == {"score": 1}
