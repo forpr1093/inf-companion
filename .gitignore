@@ -1,6 +1,6 @@
 # Third-party data: never commit (see CLAUDE.md hard rules)
-data/
-tables/
+/data/
+/tables/
 skins/*
 !skins/.gitkeep
 

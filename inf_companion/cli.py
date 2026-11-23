@@ -13,6 +13,7 @@ def parse_args(argv: list[str] | None) -> argparse.Namespace:
     p.add_argument("--port", type=int, default=8765, help="port to listen on (default 8765)")
     p.add_argument("--data-dir", default=None, help="data folder (default: $INF_COMPANION_DATA or ./data)")
     p.add_argument("--no-input", action="store_true", help="don't read the controller (no SDL)")
+    p.add_argument("--tables-dir", default="tables", help="converted recognition tables (default ./tables)")
     return p.parse_args(argv)
 
 
