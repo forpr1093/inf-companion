@@ -77,9 +77,11 @@ def is_play(frame: np.ndarray, side: str) -> bool:
 
 
 def classify(frame: np.ndarray, tables, side: str) -> str:
+    # Play first: some table areas (screentransition's) sit on the in-game score, whose
+    # digits can sum to an entry's value. The play crop never appears on other screens.
+    if is_play(frame, side):
+        return "play"
     for name, entry in tables.screen["get_screen"].items():
         if abs(area_key(frame, entry["area"]) - entry["value"]) <= SCREEN_TOLERANCE:
             return name
-    if is_play(frame, side):
-        return "play"
     return "unknown"
