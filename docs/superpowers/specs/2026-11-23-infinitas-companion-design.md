@@ -227,7 +227,7 @@ Windows gaming PC                                      Second monitor
     line, white and blue key caps, a turntable disc that spins with scratch, a soft beam
     on each press, and notes as bars with a highlight.
   - **Long notes** (user, 2026-11-23): a press becomes a long note only after it's held
-    past a threshold: 220 ms for keys, 600 ms for scratch. The scratch threshold is much
+    past a threshold: 100 ms for keys, 220 ms for scratch (user, 2026-11-23). The scratch threshold is much
     higher because an analog turntable keeps "holding" briefly after the hand leaves it.
     The note then grows from zero, without jumping. A long note is a translucent body
     between two note caps. A hold longer than the lane keeps extending past the top, so
