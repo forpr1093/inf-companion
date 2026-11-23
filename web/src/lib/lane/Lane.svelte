@@ -189,7 +189,8 @@
       }
       if (e.lane === "S") {
         const d = field.activeDir("S");
-        scratchDir = d === "down" ? -1 : d === "up" ? 1 : 0;
+        // Scratch up turns the disc counter-clockwise (its marker moves up), down clockwise.
+        scratchDir = d === "up" ? -1 : d === "down" ? 1 : 0;
       }
       if (debug && e.type === "key_down") {
         samples.push(performance.timeOrigin + performance.now() - e.at);
