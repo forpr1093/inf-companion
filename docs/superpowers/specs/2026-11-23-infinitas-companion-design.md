@@ -230,8 +230,10 @@ Windows gaming PC                                      Second monitor
     past a threshold: 220 ms for keys, 600 ms for scratch. The scratch threshold is much
     higher because an analog turntable keeps "holding" briefly after the hand leaves it.
     The note then grows from zero, without jumping. A long note is a translucent body
-    between two note caps. Once a hold has filled the lane, it fades out over 400 ms
-    rather than sitting still.
+    between two note caps. A hold longer than the lane keeps extending past the top, so
+    its top end slides out of view. Notes dissolve through a soft fade over the top 18%
+    of the lane. Faint marks scroll up a long note's body at note speed, so a long hold
+    never looks frozen (user, 2026-11-23).
 - **Button counter** (user, 2026-11-23), like the user's reference screenshot:
   - Keys 2, 4 and 6 are in the top row and 1, 3, 5 and 7 in the bottom row. Each box
     shows how many times that key was pressed.

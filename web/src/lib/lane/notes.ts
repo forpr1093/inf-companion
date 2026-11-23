@@ -13,8 +13,6 @@ export interface NoteFieldOptions {
   maxNotes?: number;
   /** How long a press must be held before it becomes a long note, per lane (default 0). */
   longNoteMs?: (lane: Lane) => number;
-  /** A hold that has filled the lane fades out over this long (default 400 ms). */
-  fadeOutMs?: number;
 }
 
 const FLASH_MS = 120;
@@ -28,7 +26,6 @@ export class NoteField {
   readonly fadeFrom: number;
   readonly maxNotes: number;
   readonly longNoteMs: (lane: Lane) => number;
-  readonly fadeOutMs: number;
   private notes: Note[] = [];
   private held = new Map<Lane, Note>();
   private lastPress = new Map<Lane, number>();
@@ -39,7 +36,6 @@ export class NoteField {
     this.fadeFrom = opts.fadeFrom ?? 0.7;
     this.maxNotes = opts.maxNotes ?? 256;
     this.longNoteMs = opts.longNoteMs ?? (() => 0);
-    this.fadeOutMs = opts.fadeOutMs ?? 400;
   }
 
   /**
@@ -108,18 +104,15 @@ export class NoteField {
       // Length only counts time held past the long-note threshold, so quick presses stay
       // taps and a long note grows from zero instead of jumping.
       const heldMs = Math.max((n.releaseT ?? t) - n.pressT, 0);
-      const grow = Math.max(heldMs - this.longNoteMs(n.lane), 0) / this.riseMs;
-      const len = Math.min(grow, 1);
-      // Once a hold has filled the lane it fades out rather than sitting still.
-      const over = Math.max(grow - 1, 0) * this.riseMs;
-      const holdAlpha = Math.max(0, 1 - over / this.fadeOutMs);
+      // No cap: a hold longer than the lane keeps extending past its top, so the top end
+      // slides out of view instead of sitting still (the lane clips it).
+      const len = Math.max(heldMs - this.longNoteMs(n.lane), 0) / this.riseMs;
       const bottom = n.releaseT === null ? 0 : Math.max(t - n.releaseT, 0) / this.riseMs;
       const top = bottom + len;
       if (bottom >= 1) continue;
       keep.push(n);
-      if (holdAlpha <= 0) continue;
       const rise = bottom <= this.fadeFrom ? 1 : Math.max(0, 1 - (bottom - this.fadeFrom) / (1 - this.fadeFrom));
-      out.push({ lane: n.lane, top, bottom, alpha: rise * holdAlpha });
+      out.push({ lane: n.lane, top, bottom, alpha: rise });
     }
     this.notes = keep;
     return out;

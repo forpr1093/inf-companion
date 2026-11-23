@@ -13,12 +13,14 @@ test("held note grows from the judge line", () => {
   const n = f.frame(300)[0]; expect(n.bottom).toBe(0); expect(n.top).toBeCloseTo(0.3);
 });
 
-test("a hold that outgrows the lane fades out instead of sitting still", () => {
-  const f = new NoteField({ riseMs: 1000, fadeOutMs: 400 }); f.press("S", 0);
-  const full = f.frame(1000)[0]; expect(full.top).toBeCloseTo(1); expect(full.alpha).toBe(1);
-  const half = f.frame(1200)[0]; expect(half.top).toBeCloseTo(1); expect(half.alpha).toBeCloseTo(0.5);
-  expect(f.frame(1500)).toEqual([]);
-  expect(f.isHeld("S")).toBe(true); // still held, just not drawn
+test("a hold longer than the lane keeps extending past the top", () => {
+  const f = new NoteField({ riseMs: 1000 }); f.press("S", 0);
+  const n = f.frame(1500)[0];
+  expect(n.bottom).toBe(0); expect(n.top).toBeCloseTo(1.5); expect(n.alpha).toBe(1);
+  f.release("S", 1500);
+  const r = f.frame(2000)[0];                // released: the whole note rises
+  expect(r.bottom).toBeCloseTo(0.5); expect(r.top).toBeCloseTo(2.0);
+  expect(f.frame(2600)).toEqual([]);        // gone once its bottom leaves the lane
 });
 
 test("rapid presses each spawn a note", () => {

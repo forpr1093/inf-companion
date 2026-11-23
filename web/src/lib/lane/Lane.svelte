@@ -12,7 +12,10 @@
   const BEAM_BANDS = 14;
   const NOTE_H = 19;
   const KEY_LN_MS = 220;     // a key held this long becomes a long note
-  const SCRATCH_LN_MS = 600; // the same for scratch // note height in lane units (the lane is 576 wide)
+  const SCRATCH_LN_MS = 600; // the same for scratch
+  const TOP_FADE = 0.18;     // top 18% of the lane: notes fade out as they leave
+  const BAND_PX = 4;         // band height inside the top fade zone
+  const MARK_GAP_PX = 64;    // spacing of the scrolling marks on long notes (lane units) // note height in lane units (the lane is 576 wide)
 
   let host: HTMLDivElement;
   let latency = $state<{ mean: number; p95: number } | null>(null);
@@ -85,6 +88,12 @@
       notesG.rect(x + 1, y + h * 0.74, w - 2, h * 0.26).fill({ color: "#000000", alpha: 0.22 * alpha });
     }
 
+    /** 0 at the very top of the lane, 1 below the top fade zone: notes dissolve as they leave. */
+    function edgeFade(y: number): number {
+      const zone = judgeY * TOP_FADE;
+      return Math.max(0, Math.min(1, y / zone));
+    }
+
     function render() {
       if (destroyed || !s || !width) return;
       const now = performance.now();
@@ -121,12 +130,35 @@
           const len = yBottom - yTop;
           const color = colors[l.color];
           if (len > minH * 1.5) {
-            // Long note: a translucent body between two caps, like a charge note.
-            notesG.rect(l.x + l.w * 0.12, yTop + minH / 2, l.w * 0.76, len - minH).fill({ color, alpha: 0.45 * n.alpha });
-            notesG.rect(l.x + l.w / 2 - 1, yTop + minH, 2, len - minH * 2).fill({ color: "#ffffff", alpha: 0.35 * n.alpha });
-            drawNote(l.x, yTop, l.w, minH, color, n.alpha);
+            // Long note: a translucent body between two caps, like a charge note. A hold
+            // longer than the lane runs off the top, dissolving through the top fade zone.
+            // Faint marks scroll up the body at note speed, so a long hold still moves.
+            const bodyTop = Math.max(yTop + minH / 2, 0);
+            const bodyBottom = yBottom - minH / 2;
+            const bx = l.x + l.w * 0.12, bw = l.w * 0.76;
+            // Solid below the fade zone; thin bands only inside it, so no seams show.
+            const zone = judgeY * TOP_FADE;
+            const solidTop = Math.max(bodyTop, zone);
+            const segment = (top: number, bottom: number, a: number) => {
+              notesG.rect(bx, top, bw, bottom - top).fill({ color, alpha: 0.45 * a });
+              notesG.rect(l.x + l.w / 2 - 1, top, 2, bottom - top).fill({ color: "#ffffff", alpha: 0.3 * a });
+            };
+            if (bodyBottom > solidTop) segment(solidTop, bodyBottom, n.alpha);
+            for (let y = Math.min(solidTop, bodyBottom); y > bodyTop; y -= BAND_PX) {
+              const top = Math.max(Math.round(y - BAND_PX), bodyTop);
+              const a = n.alpha * edgeFade((y + top) / 2);
+              if (a > 0.01) segment(top, Math.round(y), a);
+            }
+            const gap = MARK_GAP_PX * k;
+            const phase = ((now * judgeY) / field.riseMs) % gap;
+            for (let y = bodyBottom - minH - ((gap - phase) % gap); y > bodyTop; y -= gap) {
+              const a = n.alpha * edgeFade(y);
+              if (a > 0.01) notesG.rect(bx, y, bw, Math.max(1.5, 2 * k)).fill({ color: "#ffffff", alpha: 0.4 * a });
+            }
+            const capA = n.alpha * edgeFade(yTop + minH / 2);
+            if (yTop + minH > 0 && capA > 0.01) drawNote(l.x, yTop, l.w, minH, color, capA);
           }
-          drawNote(l.x, yBottom - minH, l.w, minH, color, n.alpha);
+          drawNote(l.x, yBottom - minH, l.w, minH, color, n.alpha * edgeFade(yBottom - minH / 2));
         }
       }
 
