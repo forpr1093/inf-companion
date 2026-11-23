@@ -115,18 +115,21 @@ def _make_reader(tables, side: str):
     from inf_companion.recog.result import ResultReader
     from inf_companion.recog.select import SelectReader
 
+    # Any table that's missing or shaped differently turns that reading off; capture carries on.
+    unusable = (TablesError, KeyError, IndexError, TypeError, ValueError, AttributeError)
     off = []
     try:
         select = SelectReader(tables)
-    except TablesError:
+    except unusable:
         select = None
         off.append("song select")
     try:
         result = ResultReader(tables)
-    except TablesError:
+    except unusable:
         result = None
         off.append("result")
-    notice = f"Reading {' and '.join(off)} is off: tables missing (run tools/convert_tables.py)" if off else None
+    notice = (f"Reading {' and '.join(off)} is off: tables missing or unusable "
+              "(run tools/convert_tables.py)") if off else None
     return Reader(select, result, tables.notesradar, side), notice
 
 

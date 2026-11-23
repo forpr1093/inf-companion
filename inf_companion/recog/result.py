@@ -40,7 +40,13 @@ class ResultRead:
 
     @property
     def complete(self) -> bool:
-        return None not in (self.side, self.playmode, self.difficulty, self.cleartype, self.score)
+        """Everything needed for a play record, and the EX score agrees with the judges
+        (EX = 2 x PGREAT + GREAT), which catches nearly any misread digit."""
+        if None in (self.side, self.playmode, self.difficulty, self.cleartype, self.score):
+            return False
+        if any(self.judges.get(name) is None for name in JUDGE_NAMES):
+            return False
+        return self.score == 2 * self.judges["pgreat"] + self.judges["great"]
 
 
 def _int(v) -> int | None:

@@ -74,3 +74,10 @@ def test_every_table_lamp_maps():
     names = set(json.loads((TABLES / "details.json").read_text(encoding="utf-8"))["clear_type"].values())
     names |= set(json.loads((TABLES / "musicselect.json").read_text(encoding="utf-8"))["cleartype"]["table"].values())
     assert names <= set(LAMPS)
+
+
+def test_read_digits_rejects_unknown_middle_digit():
+    table = {packbits_hex(np.array([1, 0])): 1, packbits_hex(np.array([0, 1])): 2}
+    # parts: "1", unknown-but-not-blank, "1", "2" -> a misread, not 12
+    field = np.array([[9, 0, 9, 9, 9, 0, 0, 9]])
+    assert read_digits(field, 4, (0, slice(None)), 9, table, packbits_hex) is None

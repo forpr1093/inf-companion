@@ -11,6 +11,11 @@ from dataclasses import asdict
 import numpy as np
 
 
+def _off(what: str, error: Exception) -> dict:
+    return {"type": "capture_status", "state": "running",
+            "message": f"Reading {what} is off: the tables don't match ({type(error).__name__}: {error})"}
+
+
 class Reader:
     def __init__(self, select, result, notesradar: dict, side: str):
         self.select, self.result = select, result
@@ -27,9 +32,19 @@ class Reader:
             if screen != "result":
                 self._result_sent = False
         if screen == "music_select" and self.select is not None:
-            return self._on_select(self.select.read(frame))
+            try:
+                read = self.select.read(frame)
+            except Exception as e:  # a table that doesn't match: turn this reading off, keep capturing
+                self.select = None
+                return [_off("song select", e)]
+            return self._on_select(read)
         if screen == "result" and self.result is not None and not self._result_sent:
-            return self._on_result(self.result.read(frame))
+            try:
+                read = self.result.read(frame)
+            except Exception as e:
+                self.result = None
+                return [_off("result", e)]
+            return self._on_result(read)
         return []
 
     def _stable(self, read) -> bool:
@@ -52,7 +67,8 @@ class Reader:
         notes = self._notes(read.title, read.difficulty)
         chart = {"title": read.title, "artist": None, "difficulty": read.difficulty, "level": read.level,
                  "bpm": None, "notes": notes}
-        best = None if read.score is None else {
+        unplayed = read.score is None or (read.score == 0 and read.cleartype in (None, "NO PLAY"))
+        best = None if unplayed else {
             "score": read.score, "notes": notes, "lamp": read.cleartype, "miss_count": read.misscount,
             "last_played": None, "source": "official"}
         return [{"type": "chart", "chart": chart}, {"type": "personal_best", "best": best}]

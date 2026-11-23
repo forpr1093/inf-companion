@@ -55,3 +55,23 @@ def test_score_needs_broadcast_packing(reader, monkeypatch):
 def test_black_frame_incomplete(reader):
     r = reader.read(np.zeros((1080, 1920, 3), np.uint8))
     assert not r.complete and r.title is None
+
+
+def test_complete_needs_judges_that_add_up():
+    from inf_companion.recog.result import ResultRead
+    ok = dict(side="1P", playmode="SP", difficulty="HYPER", cleartype="CLEAR", score=1228,
+              judges={"pgreat": 485, "great": 258, "good": 100, "bad": 4, "poor": 10})
+    assert ResultRead(**ok).complete
+    assert not ResultRead(**ok | {"score": 228}).complete
+    assert not ResultRead(**ok | {"judges": ok["judges"] | {"poor": None}}).complete
+
+
+def test_bad_table_turns_reading_off_not_capture():
+    from inf_companion.capture.process import _make_reader
+    from inf_companion.tables.load import load_tables
+    tables = load_tables(TABLES)
+    real = tables.raw
+    tables.raw = lambda name: {} if name == "musicselect" else real(name)
+    reader, notice = _make_reader(tables, "1P")
+    assert reader.select is None and reader.result is not None
+    assert "song select" in notice

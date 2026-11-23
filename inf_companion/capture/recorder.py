@@ -2,7 +2,8 @@
 
 Frames go to DIR/<screen>/<timestamp>.png. A frame is saved only when it looks different
 from the last one saved for that screen, at most once a second, and never more than
-`max_files` in one run. Any write error turns recording off with one message; capture
+`max_files` in one run (a frame is about 2 MB, so the default
+cap is about 3 GB). Any write error turns recording off with one message; capture
 itself carries on.
 """
 
@@ -25,7 +26,7 @@ def png_writer(img: np.ndarray, path: Path) -> None:
 
 
 class FrameRecorder:
-    def __init__(self, root: Path, min_interval_s: float = 1.0, min_distance: int = 12, max_files: int = 3000,
+    def __init__(self, root: Path, min_interval_s: float = 1.0, min_distance: int = 12, max_files: int = 1500,
                  clock: Callable[[], float] = time.monotonic,
                  save: Callable[[np.ndarray, Path], None] = png_writer):
         self.root, self.min_interval_s, self.min_distance = Path(root), min_interval_s, min_distance

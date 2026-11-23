@@ -94,7 +94,9 @@ uv run inf-companion --record D:\inf-record
 ```
 
 - Screenshots go to `D:\inf-record\<screen>\` (`music_select`, `play`, `result`, `unknown`,
-  …). It saves at most one a second, skips frames that look the same, and stops after 3000.
+  …). It saves at most one a second, skips frames that look the same, and stops after 1500.
+- Each screenshot is about 2 MB, so a full run is up to about 3 GB. During play nearly
+  every frame differs, so a few songs are plenty; record to a drive with space.
 - Scroll through about 10 songs on song select (different BPMs and difficulties), play a
   few, and stay on each result screen for a couple of seconds.
 - Zip the folder and bring it back. Delete it after; it's only for calibration.

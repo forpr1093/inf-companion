@@ -92,9 +92,12 @@ def read_digits(field: np.ndarray, count: int, part_index: tuple, maskvalue: int
     parts = np.hsplit(field, count)
     value = None
     for place in range(count):
-        part = parts[-(place + 1)][part_index]
-        key = packer((part == maskvalue).astype(np.int64))
+        bits = (parts[-(place + 1)][part_index] == maskvalue).astype(np.int64)
+        key = packer(bits)
         if key not in table:
+            # The places left must be blank; anything drawn there is a misread digit.
+            if any(np.any(parts[-(p + 1)][part_index] == maskvalue) for p in range(place, count)):
+                return None
             break
         value = (value or 0) + 10 ** place * int(table[key])
     return value

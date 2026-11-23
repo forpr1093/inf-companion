@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import numpy as np
 import pytest
 
@@ -100,3 +102,8 @@ def test_cli_record_flag():
     from inf_companion.cli import parse_args
     assert parse_args(["--record", "D:/rec"]).record == "D:/rec"
     assert parse_args([]).record is None
+
+
+def test_default_cap_is_modest():
+    rec = FrameRecorder(Path("x"))
+    assert rec.max_files <= 1500

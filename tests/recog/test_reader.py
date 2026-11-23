@@ -21,7 +21,8 @@ def sel(title="Mermaid girl", difficulty="HYPER", playmode="SP", score=1437):
 
 def res(score=1228, side="1P", playmode="SP"):
     return ResultRead(side=side, playmode=playmode, title="Mermaid girl", difficulty="HYPER", level=8,
-                      cleartype="CLEAR", score=score, judges={"pgreat": 485})
+                      cleartype="CLEAR", score=score,
+                      judges={"pgreat": 485, "great": score - 970, "good": 0, "bad": 0, "poor": 0})
 
 
 def run(reader, screens):
@@ -84,7 +85,7 @@ def test_result_sent_once_when_complete():
     msgs = run(r, ["result"] * 4 + ["play"] + ["result"] * 2)
     results = [m["result"] for m in msgs if m["type"] == "result"]
     assert [x["score"] for x in results] == [1228, 1300]
-    assert results[0]["judges"] == {"pgreat": 485}
+    assert results[0]["judges"]["pgreat"] == 485
 
 
 def test_notes_from_notesradar():
@@ -95,3 +96,30 @@ def test_notes_from_notesradar():
 def test_missing_readers_do_nothing():
     r = Reader(None, None, NOTESRADAR, "1P")
     assert run(r, ["music_select", "result"]) == []
+
+
+class Broken:
+    def read(self, frame):
+        raise ValueError("operands could not be broadcast")
+
+
+def test_reader_turns_off_on_read_error():
+    r = Reader(Broken(), Broken(), NOTESRADAR, "1P")
+    first = run(r, ["music_select"])
+    assert first[0]["type"] == "capture_status" and "song select" in first[0]["message"]
+    assert run(r, ["music_select", "music_select"]) == []
+    msg = run(r, ["result"])
+    assert "result" in msg[0]["message"]
+    assert run(r, ["result"]) == []
+
+
+def test_unplayed_chart_has_no_best():
+    unplayed = SelectRead("SP", "X", "HYPER", 8, "NO PLAY", None, 0, None)
+    r = Reader(Queue(unplayed, unplayed), None, NOTESRADAR, "1P")
+    assert run(r, ["music_select"] * 2)[1] == {"type": "personal_best", "best": None}
+
+
+def test_quit_play_keeps_its_score():
+    quit_read = SelectRead("SP", "X", "HYPER", 8, "NO PLAY", None, 976, 83)
+    r = Reader(Queue(quit_read, quit_read), None, NOTESRADAR, "1P")
+    assert run(r, ["music_select"] * 2)[1]["best"]["score"] == 976
