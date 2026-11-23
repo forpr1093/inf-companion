@@ -64,7 +64,8 @@ Source of the ready-made recognition tables. Last commit seen: 2026-10-15.
     `resultrecognition` **do** reference globals: `builtins.slice`, `numpy.dtype`,
     `numpy._core.multiarray.scalar`, `numpy._core.numeric._frombuffer`,
     `numpy._core.multiarray._reconstruct` and `numpy.ndarray`. A `find_class` that always
-    raises can't read them (see plan 1, Roadmap).
+    raises can't read them. Decision (user, 2026-11-23): allow exactly these six, mapped
+    to inert stand-ins.
   - `musicnamechanges.res` is plain JSON (a list of [old, new] title pairs).
 - Building tables: `resources_learning_musicselect.py` (e.g.
   `learning_songname_infinitas`, around line 677) builds the tries from labelled
@@ -74,8 +75,9 @@ Source of the ready-made recognition tables. Last commit seen: 2026-10-15.
 - Learn from the method, but don't copy its code (no licence).
 - Never redistribute its `.res` files in a public repo or release. Fetch them at
   runtime or setup.
-- Convert pickles to JSON with a restricted `pickle.Unpickler` whose `find_class`
-  always raises. The app only ever reads the JSON.
+- Convert pickles to JSON with a restricted `pickle.Unpickler`. Its `find_class`
+  allows only the six names above, each returning our own inert stand-in (never numpy or
+  the real `slice`), and raises for everything else. The app only ever reads the JSON.
 
 ### Other
 - **Reflux** — https://github.com/olji/Reflux (MIT): reads INFINITAS memory. Out of

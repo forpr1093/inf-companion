@@ -75,7 +75,9 @@ setup.
     redistribute the tables in a public repo or release. Fetch them from the source
     instead.
   - The tables are gzip/plain **pickle** files. They must be converted to JSON offline
-    with a restricted unpickler that allows no globals. The app only reads JSON.
+    with a restricted unpickler. It allows exactly six named globals (user,
+    2026-11-23; list in §5.2), each mapped to an inert stand-in, and refuses every other
+    global. The app only reads JSON.
 - The user agreed that **online calls are OK for fetching table updates**. Nothing
   else goes online.
 - **Skin images** (WMII_FHD, a beatoraja FullHD play skin) are the user's local copy. Its
@@ -142,9 +144,14 @@ Windows gaming PC                                      Second monitor
   songs released before tables update.
 - **Table pipeline** (`tools/convert_tables.py`): download the `.res` files from the
   inf-notebook GitHub repo (pinned commit, or latest on request), unpickle with a
-  restricted `Unpickler` whose `find_class` always raises, and write JSON plus a
+  restricted `Unpickler` and write JSON plus a
   manifest (source commit, timestamps). The app checks for updates on start-up when the
   user allows it, or from a button in settings.
+  - **Allowed globals** (user, 2026-11-23): exactly `builtins.slice`, `numpy.dtype`, `numpy._core.multiarray.scalar`, `numpy._core.numeric._frombuffer`, `numpy._core.multiarray._reconstruct` and `numpy.ndarray`. `find_class`
+    returns our own inert stand-ins: a slice becomes `[start, stop, step]`, a scalar
+    becomes an int or float, and an array becomes nested lists with shape and dtype.
+    numpy is never imported, and nothing from the file chooses code to run. Every other
+    global raises.
 
 ### 5.3 Song metadata
 - Max BPM drives GIF speed. Notes radar is optional extra display.

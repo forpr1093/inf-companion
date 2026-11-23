@@ -15,8 +15,12 @@ Read first:
 ## Hard rules
 - **No memory reading or injection into INFINITAS.** Image-only recognition.
 - **Never load pickle files at runtime.** inf-notebook `.res` tables are converted
-  offline by `tools/convert_tables.py` with a restricted unpickler (no globals allowed).
-  The app reads only the JSON output.
+  offline by `tools/convert_tables.py` with a restricted unpickler. Only six named
+  globals are allowed (user, 2026-11-23): `builtins.slice`, `numpy.dtype`,
+  `numpy._core.multiarray.scalar`, `numpy._core.numeric._frombuffer`,
+  `numpy._core.multiarray._reconstruct`, `numpy.ndarray`. Each maps to our own inert
+  stand-in that turns the data into plain numbers and lists. Never import numpy or call
+  the real objects. Every other global is refused. The app reads only the JSON output.
 - **Never commit inf-notebook's `.res` files or the converted tables.** inf-notebook
   has no licence. Tables are fetched at setup/runtime. Keep `data/` and `tables/` in
   `.gitignore`.
