@@ -58,6 +58,18 @@ def summarise(samples: list[Sample]) -> dict:
     }
 
 
+def crop_to_client(frame: np.ndarray, client: tuple[int, int, int, int],
+                   monitor: tuple[int, int, int, int]) -> np.ndarray | None:
+    """Cut the window's client area (screen coords) out of a frame of one monitor (screen coords)."""
+    h, w = frame.shape[:2]
+    l, t = client[0] - monitor[0], client[1] - monitor[1]
+    r, b = client[2] - monitor[0], client[3] - monitor[1]
+    l, t, r, b = max(l, 0), max(t, 0), min(r, w), min(b, h)
+    if r <= l or b <= t:
+        return None
+    return frame[t:b, l:r]
+
+
 def find_window(enum: Callable[[], Iterable[tuple[int, str]]] | None = None, title: str = TITLE) -> int | None:
     for hwnd, text in (enum or _enum_windows)():
         if text.startswith(title):
@@ -95,6 +107,26 @@ def _client_rect(hwnd: int) -> tuple[int, int, int, int]:
     return p.x, p.y, p.x + r.right, p.y + r.bottom
 
 
+def _dib_to_rgb(gdi32, mem, bmp, w: int, h: int) -> np.ndarray | None:
+    """Read a bitmap as a 32-bit top-down DIB and return RGB."""
+    from ctypes import wintypes
+
+    class BITMAPINFOHEADER(ctypes.Structure):
+        _fields_ = [("biSize", wintypes.DWORD), ("biWidth", wintypes.LONG), ("biHeight", wintypes.LONG),
+                    ("biPlanes", wintypes.WORD), ("biBitCount", wintypes.WORD), ("biCompression", wintypes.DWORD),
+                    ("biSizeImage", wintypes.DWORD), ("biXPelsPerMeter", wintypes.LONG),
+                    ("biYPelsPerMeter", wintypes.LONG), ("biClrUsed", wintypes.DWORD), ("biClrImportant", wintypes.DWORD)]
+
+    bi = BITMAPINFOHEADER()
+    bi.biSize, bi.biWidth, bi.biHeight = ctypes.sizeof(BITMAPINFOHEADER), w, -h  # negative: top-down
+    bi.biPlanes, bi.biBitCount, bi.biCompression = 1, 32, 0
+    buf = (ctypes.c_ubyte * (w * h * 4))()
+    if not gdi32.GetDIBits(mem, bmp, 0, h, buf, ctypes.byref(bi), 0):
+        return None
+    bgra = np.frombuffer(buf, dtype=np.uint8).reshape(h, w, 4)
+    return bgra[:, :, 2::-1].copy()  # BGRA -> RGB
+
+
 class WindowGrabber:
     """PrintWindow(PW_CLIENTONLY | PW_RENDERFULLCONTENT) into a 32-bit top-down DIB."""
 
@@ -115,21 +147,7 @@ class WindowGrabber:
         try:
             if not user32.PrintWindow(self.hwnd, mem, 3):
                 return None
-
-            class BITMAPINFOHEADER(ctypes.Structure):
-                _fields_ = [("biSize", wintypes.DWORD), ("biWidth", wintypes.LONG), ("biHeight", wintypes.LONG),
-                            ("biPlanes", wintypes.WORD), ("biBitCount", wintypes.WORD), ("biCompression", wintypes.DWORD),
-                            ("biSizeImage", wintypes.DWORD), ("biXPelsPerMeter", wintypes.LONG),
-                            ("biYPelsPerMeter", wintypes.LONG), ("biClrUsed", wintypes.DWORD), ("biClrImportant", wintypes.DWORD)]
-
-            bi = BITMAPINFOHEADER()
-            bi.biSize, bi.biWidth, bi.biHeight = ctypes.sizeof(BITMAPINFOHEADER), w, -h  # negative: top-down
-            bi.biPlanes, bi.biBitCount, bi.biCompression = 1, 32, 0
-            buf = (ctypes.c_ubyte * (w * h * 4))()
-            if not gdi32.GetDIBits(mem, bmp, 0, h, buf, ctypes.byref(bi), 0):
-                return None
-            bgra = np.frombuffer(buf, dtype=np.uint8).reshape(h, w, 4)
-            return bgra[:, :, 2::-1].copy()  # BGRA -> RGB
+            return _dib_to_rgb(gdi32, mem, bmp, w, h)
         finally:
             gdi32.SelectObject(mem, old)
             gdi32.DeleteObject(bmp)
@@ -140,25 +158,94 @@ class WindowGrabber:
         pass
 
 
-class DxcamGrabber:
-    """DXGI Desktop Duplication of one output, cropped to the window's client area."""
+def _monitor_of(hwnd: int) -> tuple[int, tuple[int, int, int, int]]:
+    """(HMONITOR, monitor rect in screen coords) for the monitor the window is on."""
+    from ctypes import wintypes
+    user32 = ctypes.windll.user32
+    user32.MonitorFromWindow.restype = ctypes.c_void_p
+    hmon = user32.MonitorFromWindow(hwnd, 2)  # MONITOR_DEFAULTTONEAREST
 
-    def __init__(self, hwnd: int, output: int):
+    class MONITORINFO(ctypes.Structure):
+        _fields_ = [("cbSize", wintypes.DWORD), ("rcMonitor", wintypes.RECT),
+                    ("rcWork", wintypes.RECT), ("dwFlags", wintypes.DWORD)]
+
+    mi = MONITORINFO()
+    mi.cbSize = ctypes.sizeof(MONITORINFO)
+    user32.GetMonitorInfoW(ctypes.c_void_p(hmon), ctypes.byref(mi))
+    r = mi.rcMonitor
+    return hmon, (r.left, r.top, r.right, r.bottom)
+
+
+class ScreenGrabber:
+    """BitBlt from the whole-desktop DC ("DISPLAY") at the window's client area.
+
+    Works across monitors (the DISPLAY DC covers the virtual screen) and often where
+    PrintWindow gives black frames for DirectX games.
+    """
+
+    def __init__(self, hwnd: int):
+        self.hwnd = hwnd
+        gdi32 = ctypes.windll.gdi32
+        gdi32.CreateDCW.restype = ctypes.c_void_p
+        self.screen = gdi32.CreateDCW("DISPLAY", None, None, None)
+
+    def grab(self) -> np.ndarray | None:
+        from ctypes import wintypes
+        gdi32 = ctypes.windll.gdi32
+        l, t, r, b = _client_rect(self.hwnd)
+        w, h = r - l, b - t
+        if w <= 0 or h <= 0:
+            return None
+        mem = gdi32.CreateCompatibleDC(ctypes.c_void_p(self.screen))
+        bmp = gdi32.CreateCompatibleBitmap(ctypes.c_void_p(self.screen), w, h)
+        old = gdi32.SelectObject(mem, bmp)
+        try:
+            if not gdi32.BitBlt(mem, 0, 0, w, h, ctypes.c_void_p(self.screen), l, t, 0x00CC0020):  # SRCCOPY
+                return None
+            return _dib_to_rgb(gdi32, mem, bmp, w, h)
+        finally:
+            gdi32.SelectObject(mem, old)
+            gdi32.DeleteObject(bmp)
+            gdi32.DeleteDC(mem)
+
+    def close(self) -> None:
+        ctypes.windll.gdi32.DeleteDC(ctypes.c_void_p(self.screen))
+
+
+class DxcamGrabber:
+    """DXGI Desktop Duplication of the output INFINITAS is on, cropped to its client area.
+
+    The adapter and output are matched by monitor handle (like inf-notebook does), unless
+    --dxcam-output forces an output on adapter 0.
+    """
+
+    def __init__(self, hwnd: int, output: int | None):
         import dxcam
         self.hwnd = hwnd
-        self.cam = dxcam.create(output_idx=output, output_color="RGB")
-        self.last: np.ndarray | None = None
+        hmon, self.monitor = _monitor_of(hwnd)
+        device_idx, output_idx = 0, output
+        if output is None:
+            for i_adapter, p_adapter in enumerate(dxcam.enum_dxgi_adapters()):
+                for i_output, p_output in enumerate(dxcam.Device(p_adapter).enum_outputs()):
+                    if int(dxcam.Output(p_output).hmonitor or 0) == int(hmon or 0):
+                        device_idx, output_idx = i_adapter, i_output
+            if output_idx is None:
+                raise RuntimeError("no DXGI output matches the INFINITAS monitor")
+        self.picked = f"adapter {device_idx}, output {output_idx}"
+        print(f"  dxcam: {self.picked}, monitor {self.monitor}")
+        self.cam = dxcam.create(device_idx=device_idx, output_idx=output_idx, output_color="RGB")
 
     def grab(self) -> np.ndarray | None:
         frame = self.cam.grab()  # None when nothing changed since the last grab
         if frame is None:
             return None
-        l, t, r, b = _client_rect(self.hwnd)
-        h, w = frame.shape[:2]
-        l, t, r, b = max(l, 0), max(t, 0), min(r, w), min(b, h)
-        return frame[t:b, l:r] if r > l and b > t else frame
+        return crop_to_client(frame, _client_rect(self.hwnd), self.monitor)
 
     def close(self) -> None:
+        try:
+            self.cam.release()
+        except Exception:
+            pass
         del self.cam
 
 
@@ -190,11 +277,12 @@ def run_one(grabber, seconds: float, target_fps: float, save_every: float, frame
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--method", choices=["window", "dxcam", "all"], default="all")
+    ap.add_argument("--method", choices=["window", "screen", "dxcam", "all"], default="all")
     ap.add_argument("--seconds", type=float, default=30)
     ap.add_argument("--target-fps", type=float, default=4)
     ap.add_argument("--save-every", type=float, default=2.0)
-    ap.add_argument("--dxcam-output", type=int, default=0, help="monitor index INFINITAS is on (0 = primary)")
+    ap.add_argument("--dxcam-output", type=int, default=None,
+                    help="force a dxcam output on adapter 0 (default: match INFINITAS's monitor)")
     ap.add_argument("--out", required=True)
     a = ap.parse_args(argv)
     if sys.platform != "win32":
@@ -208,7 +296,7 @@ def main(argv: list[str] | None = None) -> int:
     out.mkdir(parents=True, exist_ok=True)
     hwnd = find_window()
     results: dict[str, dict] = {}
-    methods = ["window", "dxcam"] if a.method == "all" else [a.method]
+    methods = ["window", "screen", "dxcam"] if a.method == "all" else [a.method]
     for method in methods:
         for target in (a.target_fps, 0.0):
             key = f"{method} @ {'max' if target == 0 else f'{target:g} fps'}"
@@ -217,7 +305,8 @@ def main(argv: list[str] | None = None) -> int:
                 continue
             print(f"Running {key} for {a.seconds:g} s ...")
             try:
-                grabber = WindowGrabber(hwnd) if method == "window" else DxcamGrabber(hwnd, a.dxcam_output)
+                grabber = {"window": lambda: WindowGrabber(hwnd), "screen": lambda: ScreenGrabber(hwnd),
+                           "dxcam": lambda: DxcamGrabber(hwnd, a.dxcam_output)}[method]()
             except Exception as e:  # e.g. dxcam not installed or no such output
                 results[key] = {**summarise([]), "status": f"error: {e}"}
                 continue

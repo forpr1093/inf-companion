@@ -95,10 +95,11 @@ extra packages it needs (`dxcam`, `psutil`) go into uv's cache on D:, not into t
    uv run --with dxcam --with psutil --with pillow --with numpy python tools/capture_spike.py --out D:\capture-spike\fullscreen
    ```
 
-   It runs each method (`window`, `dxcam`) twice: at 4 fps, then as fast as it can. Each
-   run is 30 seconds, so about 2 minutes in total. Play the song while it runs, then stay
+   It runs each method (`window`, `screen`, `dxcam`) twice: at 4 fps, then as fast as it
+   can. Each run is 30 seconds, so about 3 minutes in total. Play while it runs, then stay
    on the result screen until it finishes.
-   - If INFINITAS is on a second monitor, add `--dxcam-output 1`.
+   - `dxcam` finds the monitor INFINITAS is on by itself, so a second monitor needs no
+     extra option. `--dxcam-output N` forces an output only if that detection fails.
 3. If INFINITAS has a windowed or borderless mode, switch to it and run again with
    `--out D:\capture-spike\windowed`.
 4. **PresentMon:** record the same song twice, once with the spike off and once with it
