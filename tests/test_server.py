@@ -142,3 +142,20 @@ def test_hello_reports_gif_version_and_uploads_always_change_it(ctx, tmp_path):
             assert ws.receive_json()["gif_version"] == v1   # same file, same version
             c.put("/api/gif", content=gif, headers={"content-type": "image/gif"})
             assert ws.receive_json()["version"] != v1       # a new upload never reuses a version
+
+
+def test_hello_reports_capture_state(ctx):
+    from starlette.testclient import TestClient
+    from inf_companion.server.app import create_app
+    with TestClient(create_app(ctx)) as c, c.websocket_connect("/ws") as ws:
+        h = ws.receive_json()
+        assert h["screen"] is None and h["capture_status"] == {"state": "off"}
+
+    class FakeCapture:
+        def state(self):
+            return {"screen": "result", "capture_status": {"state": "running"}}
+
+    ctx.capture = FakeCapture()
+    with TestClient(create_app(ctx)) as c, c.websocket_connect("/ws") as ws:
+        h = ws.receive_json()
+        assert h["screen"] == "result" and h["capture_status"] == {"state": "running"}

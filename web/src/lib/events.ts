@@ -42,11 +42,15 @@ export interface RecentPlay {
   option: string | null; played_at: string;
 }
 
+export type Screen = "music_select" | "play" | "result" | "loading" | "screentransition" | "entry" | "gameend" | "unknown";
+export interface CaptureStatus { state: "running" | "no frames" | "off"; message?: string; }
+
 export interface KeyEvent { type: "key_down" | "key_up"; lane: Lane; dir: "up" | "down" | null; t: number; at: number; }
 
 export type ServerEvent =
   | { type: "hello"; at: number; version: string; settings: Settings; devices: DeviceInfo[]; bindings: Record<string, Binding>; has_gif: boolean; counts: Counts;
-      binding: { target: Target; index: number; total: number } | null; gif_version: number }
+      binding: { target: Target; index: number; total: number } | null; gif_version: number;
+      screen: Screen | null; capture_status: CaptureStatus }
   | { type: "settings"; at: number; settings: Settings }
   | { type: "devices"; at: number; devices: DeviceInfo[] }
   | KeyEvent
@@ -58,7 +62,9 @@ export type ServerEvent =
   | { type: "error"; at: number; message: string }
   | { type: "chart"; at: number; chart: Chart | null }
   | { type: "personal_best"; at: number; best: PersonalBest | null }
-  | { type: "recent_plays"; at: number; plays: RecentPlay[] };
+  | { type: "recent_plays"; at: number; plays: RecentPlay[] }
+  | { type: "screen"; at: number; screen: Screen }
+  | ({ type: "capture_status"; at: number } & CaptureStatus);
 
 export function emptyCounts(): Counts {
   return Object.fromEntries(TARGETS.map(t => [t, 0])) as Counts;

@@ -14,6 +14,9 @@ def parse_args(argv: list[str] | None) -> argparse.Namespace:
     p.add_argument("--data-dir", default=None, help="data folder (default: $INF_COMPANION_DATA or ./data)")
     p.add_argument("--no-input", action="store_true", help="don't read the controller (no SDL)")
     p.add_argument("--tables-dir", default="tables", help="converted recognition tables (default ./tables)")
+    p.add_argument("--capture", choices=["off", "replay"], default="off", help="screen capture backend (default off)")
+    p.add_argument("--source", default=None, help="replay: folder of screenshots or one image")
+    p.add_argument("--replay-fps", type=float, default=None, help="replay: frames per second (default: adaptive)")
     return p.parse_args(argv)
 
 
@@ -41,6 +44,16 @@ def main(argv: list[str] | None = None) -> int:
         service = InputService(ctx.bus, ctx.bindings)
         ctx.input = service
         service.start()
+    capture = None
+    if args.capture != "off":
+        from inf_companion.capture.process import start_capture
+
+        if args.capture == "replay" and not args.source:
+            print("--capture replay needs --source <folder of screenshots>")
+            return 2
+        capture = start_capture(args.capture, args.source, Path(args.tables_dir).resolve(),
+                                ctx.settings.get_all()["side"], ctx.bus, fixed_fps=args.replay_fps)
+        ctx.capture = capture
     print(f"inf-companion {inf_companion.__version__}: data in {data_dir}")
     print(f"open http://{args.host}:{args.port}/")
     try:
@@ -48,6 +61,8 @@ def main(argv: list[str] | None = None) -> int:
     finally:
         if service is not None:
             service.stop()
+        if capture is not None:
+            capture.stop()
     return 0
 
 

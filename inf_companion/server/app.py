@@ -7,7 +7,7 @@ import os
 import tempfile
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Protocol
+from typing import Any, Protocol
 
 from starlette.applications import Starlette
 from starlette.requests import Request
@@ -41,6 +41,7 @@ class AppContext:
     data_dir: Path
     static_dir: Path | None
     input: InputLike | None = None
+    capture: Any = None  # CaptureHandle-like: .state() -> {"screen", "capture_status"}
     gif_version: int = field(default=0)
 
 
@@ -60,6 +61,7 @@ def create_app(ctx: AppContext) -> Starlette:
             counts=ctx.input.counts() if ctx.input else {t: 0 for t in TARGETS},
             binding=ctx.input.binding_state() if ctx.input else None,
             gif_version=ctx.gif_version,
+            **(ctx.capture.state() if ctx.capture else {"screen": None, "capture_status": {"state": "off"}}),
         )
 
     async def get_settings(request: Request) -> Response:

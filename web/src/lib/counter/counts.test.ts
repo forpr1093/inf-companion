@@ -28,7 +28,7 @@ test("counter target", () => {
 test("hello replaces local counts", () => {
   for (let i = 0; i < 3; i++) applyEvent(down("5"));
   expect(get(counts)["5"]).toBe(3);
-  applyEvent({ type: "hello", at: 0, version: "x", settings: DEFAULTS, devices: [], bindings: {}, has_gif: false, counts: emptyCounts(), binding: null, gif_version: 0 });
+  applyEvent({ type: "hello", at: 0, version: "x", settings: DEFAULTS, devices: [], bindings: {}, has_gif: false, counts: emptyCounts(), binding: null, gif_version: 0, screen: null, capture_status: { state: "off" } });
   expect(get(counts)["5"]).toBe(0);
   applyEvent(down("5"));
   applyEvent({ type: "counts", at: 0, counts: { ...emptyCounts(), "2": 9 } });

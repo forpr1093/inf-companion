@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import { emitKey, settings, status } from "../lib/stores";
+  import { captureStatus, emitKey, screen, settings, status } from "../lib/stores";
   import { devKeyboard, startDemo } from "../lib/demo";
   import { demoPanels } from "../lib/demoPanels";
   import Lane from "../lib/lane/Lane.svelte";
@@ -13,6 +13,7 @@
   const params = new URLSearchParams(location.search);
   const demo = params.has("demo");
   const dev = params.has("dev");
+  const debug = params.has("debug");
 
   onMount(() => {
     const stops: (() => void)[] = [];
@@ -29,6 +30,9 @@
   <section class="counter-area" aria-label="Button counter"><Counter /></section>
   <section class="gif-area" aria-label="Loop"><GifPlayer /></section>
   <section class="recent"><RecentPlays /></section>
+  {#if debug}
+    <span class="screen-debug">screen: {$screen ?? "—"} · capture: {$captureStatus.state}{$captureStatus.message ? ` (${$captureStatus.message})` : ""}</span>
+  {/if}
   <a class="to-settings" href="#/settings" aria-label="Settings">Settings</a>
   <span class="conn" data-status={$status} title="Server connection: {$status}" aria-label="Server connection: {$status}"></span>
 </div>
@@ -70,6 +74,10 @@
   .gif-area { grid-area: gif; min-height: 0; min-width: 0; }
   .recent { grid-area: recent; min-height: 0; min-width: 0; }
 
+  .screen-debug {
+    position: absolute; left: 18px; bottom: 0; font-size: 0.75rem; color: var(--muted);
+    max-width: 60vw; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
   .to-settings {
     position: absolute; right: 20px; bottom: 0; font-size: 0.75rem; color: var(--muted);
     text-decoration: none; opacity: 0.4;
