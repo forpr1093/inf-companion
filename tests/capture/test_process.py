@@ -80,3 +80,37 @@ def test_app_runs_without_tables(tmp_path):
     assert off["state"] == "off" and "convert_tables.py" in off["message"]
     assert handle.state() == {"screen": None, "capture_status": {"state": "off", "message": off["message"]}}
     handle.stop()  # safe when nothing was started
+
+
+def test_running_status_carries_notice():
+    emitted = []
+    capture_loop(FakeSource(frames("a")), classify, emitted.append, StopAfter(1),
+                 clock=lambda: 0.0, sleep=lambda s: None, notice="no play reference for 2P")
+    assert emitted[0] == {"type": "capture_status", "state": "running", "message": "no play reference for 2P"}
+
+
+def write_min_tables(d):
+    import json
+    files = {"manifest": {"source": "kaktuswald/inf-notebook", "commit": "abc", "files": {}},
+             "screenrecognition": {"get_screen": {}}, "musictable": {}, "notesradar": {}}
+    for name, data in files.items():
+        (d / f"{name}.json").write_text(json.dumps(data))
+
+
+def test_child_crash_is_reported(tmp_path):
+    import time
+    write_min_tables(tmp_path)
+    bus = RecordingBus()
+    handle = start_capture("replay", tmp_path / "missing-source", tmp_path, "1P", bus)
+    handle.process.join(timeout=20)
+    handle._relay.join(timeout=5)
+    assert handle.status["state"] == "off"
+    assert "missing-source" in handle.status["message"]
+    handle.stop()
+
+
+def test_child_exit_without_message_is_reported():
+    from inf_companion.capture.process import exit_status
+    assert exit_status(1, {"state": "running"}) == {"state": "off", "message": "capture process exited (code 1)"}
+    assert exit_status(0, {"state": "running"}) is None
+    assert exit_status(1, {"state": "off", "message": "x"}) is None

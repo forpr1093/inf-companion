@@ -47,3 +47,26 @@ def test_raw_missing_optional_table(tmp_path):
     write_tables(tmp_path)
     with pytest.raises(TablesError, match="details.json is missing"):
         load_tables(tmp_path).raw("details")
+
+
+@pytest.mark.parametrize("entry,bad", [
+    ({"value": 9}, "area"),
+    ({"area": {"left": 1, "top": 2, "width": 3}, "value": 9}, "area"),
+    ({"area": {"left": 1, "top": 2, "width": 3, "height": 4}, "value": "9"}, "value"),
+])
+def test_bad_screen_table_shape_reported(tmp_path, entry, bad):
+    write_tables(tmp_path, screenrecognition={"get_screen": {"result": entry}})
+    with pytest.raises(TablesError, match=f"screenrecognition.*result.*{bad}.*convert_tables.py"):
+        load_tables(tmp_path)
+
+
+def test_missing_get_screen_reported(tmp_path):
+    write_tables(tmp_path, screenrecognition={"something_else": {}})
+    with pytest.raises(TablesError, match="screenrecognition.*get_screen"):
+        load_tables(tmp_path)
+
+
+def test_unknown_source_reported(tmp_path):
+    write_tables(tmp_path, manifest={"source": "someone/else", "commit": "abc", "files": {}})
+    with pytest.raises(TablesError, match="unknown source.*someone/else"):
+        load_tables(tmp_path)

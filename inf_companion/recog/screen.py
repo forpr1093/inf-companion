@@ -58,6 +58,14 @@ def _play_refs() -> dict:
     return json.loads(path.read_text(encoding="utf-8")) if path.is_file() else {}
 
 
+def play_reference_notice(side: str) -> str | None:
+    """A message for the user when play can't be detected on their side, else None."""
+    if _play_refs().get(side):
+        return None
+    return (f"No play reference for {side}: play detection is off. Add {side} play screenshots to "
+            f"tests/fixtures/screens/play_{side.lower()}/ and run tools/calibrate_screens.py --write-play.")
+
+
 def is_play(frame: np.ndarray, side: str) -> bool:
     refs = _play_refs()
     ref = refs.get(side)

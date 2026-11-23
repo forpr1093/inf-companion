@@ -86,3 +86,10 @@ def test_average_hash_shape_and_distance():
     assert len(h) == 64
     assert hamming(h, h) == 0
     assert hamming(h, average_hash(255 - img)) == 256
+
+
+def test_play_reference_notice():
+    from inf_companion.recog.screen import play_reference_notice
+    assert play_reference_notice("1P") is None
+    msg = play_reference_notice("2P")
+    assert "2P" in msg and "calibrate_screens.py" in msg

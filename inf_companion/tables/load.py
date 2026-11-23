@@ -7,6 +7,8 @@ from typing import Any
 
 FIX = "Run: uv run python tools/convert_tables.py --out <tables folder>"
 REQUIRED = ("screenrecognition", "musictable", "notesradar", "manifest")
+SOURCE = "kaktuswald/inf-notebook"
+AREA_KEYS = ("left", "top", "width", "height")
 
 
 class TablesError(Exception):
@@ -44,4 +46,25 @@ def load_tables(dir: Path) -> Tables:
     if not dir.is_dir():
         raise TablesError(f"No tables folder at {dir}. {FIX}")
     screen, music, notesradar, manifest = (_read(dir, n) for n in REQUIRED)
+    _check(manifest, screen)
     return Tables(dir=dir, manifest=manifest, screen=screen, music=music, notesradar=notesradar)
+
+
+def _is_int(v: Any) -> bool:
+    return isinstance(v, int) and not isinstance(v, bool)
+
+
+def _check(manifest: Any, screen: Any) -> None:
+    """Catch tables from another source or with a shape recognition can't use, at load time."""
+    source = manifest.get("source") if isinstance(manifest, dict) else None
+    if source != SOURCE:
+        raise TablesError(f"Tables come from an unknown source ({source!r}, expected {SOURCE}). {FIX}")
+    entries = screen.get("get_screen") if isinstance(screen, dict) else None
+    if not isinstance(entries, dict):
+        raise TablesError(f"screenrecognition.json has no get_screen section. {FIX}")
+    for name, e in entries.items():
+        area = e.get("area") if isinstance(e, dict) else None
+        if not isinstance(area, dict) or not all(_is_int(area.get(k)) and area[k] >= 0 for k in AREA_KEYS):
+            raise TablesError(f"screenrecognition.json entry {name!r} has a bad area. {FIX}")
+        if not _is_int(e.get("value")):
+            raise TablesError(f"screenrecognition.json entry {name!r} has a bad value. {FIX}")

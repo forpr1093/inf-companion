@@ -43,7 +43,7 @@ class StableScreen:
 
 def capture_loop(source, classify_fn: Callable[[np.ndarray], str], emit: Callable[[dict], None], stop,
                  clock: Callable[[], float] = time.monotonic, sleep: Callable[[float], None] = time.sleep,
-                 fixed_fps: float | None = None) -> None:
+                 fixed_fps: float | None = None, notice: str | None = None) -> None:
     stable = StableScreen()
     status = None
     while not stop.is_set():
@@ -57,7 +57,7 @@ def capture_loop(source, classify_fn: Callable[[np.ndarray], str], emit: Callabl
             continue
         if status != "running":
             status = "running"
-            emit({"type": "capture_status", "state": status})
+            emit({"type": "capture_status", "state": status} | ({"message": notice} if notice else {}))
         changed = stable.feed(classify_fn(frame))
         if changed is not None:
             emit({"type": "screen", "screen": changed})
@@ -66,7 +66,15 @@ def capture_loop(source, classify_fn: Callable[[np.ndarray], str], emit: Callabl
 
 
 def _child(kind: str, source_path: str, tables_dir: str, side: str, q, stop, fixed_fps: float | None) -> None:
-    from inf_companion.recog.screen import classify
+    try:
+        _run_child(kind, source_path, tables_dir, side, q, stop, fixed_fps)
+    except Exception as e:  # tell the app instead of dying with only a traceback
+        q.put({"type": "capture_status", "state": "off", "message": f"Capture stopped: {type(e).__name__}: {e}"})
+        raise
+
+
+def _run_child(kind: str, source_path: str, tables_dir: str, side: str, q, stop, fixed_fps: float | None) -> None:
+    from inf_companion.recog.screen import classify, play_reference_notice
 
     tables = load_tables(Path(tables_dir))
     if kind == "replay":
@@ -75,9 +83,17 @@ def _child(kind: str, source_path: str, tables_dir: str, side: str, q, stop, fix
     else:
         raise ValueError(f"unknown capture backend {kind!r}")
     try:
-        capture_loop(source, lambda f: classify(f, tables, side), q.put, stop, fixed_fps=fixed_fps)
+        capture_loop(source, lambda f: classify(f, tables, side), q.put, stop, fixed_fps=fixed_fps,
+                     notice=play_reference_notice(side))
     finally:
         source.close()
+
+
+def exit_status(exitcode: int | None, last: dict) -> dict | None:
+    """The status to report when the child has exited, unless it already reported one."""
+    if exitcode in (0, None) or last.get("state") == "off":
+        return None
+    return {"state": "off", "message": f"capture process exited (code {exitcode})"}
 
 
 @dataclass
@@ -130,6 +146,9 @@ def start_capture(kind: str, source_path, tables_dir, side: str, bus, fixed_fps:
                 continue
             except (EOFError, OSError):
                 break
+        final = exit_status(proc.exitcode, handle.status)
+        if final is not None:
+            publish({"type": "capture_status", **final})
 
     t = threading.Thread(target=relay, name="capture-relay", daemon=True)
     t.start()
