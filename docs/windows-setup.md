@@ -80,3 +80,43 @@ Run it with INFINITAS open and the page on the second monitor at
 5. **The game feels the same.** No stutter or input delay in INFINITAS.
 
 Note the numbers and anything odd, and bring them back.
+
+## Capture spike (one-time test)
+
+This measures which way of capturing INFINITAS works on your PC and what it costs. The
+extra packages it needs (`dxcam`, `psutil`) go into uv's cache on D:, not into the app.
+
+1. Start INFINITAS and pick a song you know.
+2. In PowerShell:
+
+   ```powershell
+   cd D:\code\inf-companion
+   git pull
+   uv run --with dxcam --with psutil --with pillow --with numpy python tools/capture_spike.py --out D:\capture-spike\fullscreen
+   ```
+
+   It runs each method (`window`, `dxcam`) twice: at 4 fps, then as fast as it can. Each
+   run is 30 seconds, so about 2 minutes in total. Play the song while it runs, then stay
+   on the result screen until it finishes.
+   - If INFINITAS is on a second monitor, add `--dxcam-output 1`.
+3. If INFINITAS has a windowed or borderless mode, switch to it and run again with
+   `--out D:\capture-spike\windowed`.
+4. **PresentMon:** record the same song twice, once with the spike off and once with it
+   running, so we can see whether capture affects the game's frame times.
+5. Bring back the `report.md` from each run, the PresentMon CSVs, and the `frames\`
+   folders.
+
+### Screenshots for screen recognition
+
+From the saved `frames\` PNGs, copy at least 5 of each, from different songs, into these
+folders in the repo:
+
+```
+tests/fixtures/screens/music_select/
+tests/fixtures/screens/play_1p/      (or play_2p/, the side you play)
+tests/fixtures/screens/result/
+tests/fixtures/screens/loading/
+tests/fixtures/screens/other/        (anything else: title, options, menus)
+```
+
+If you need more, run the spike again with `--save-every 1`.
