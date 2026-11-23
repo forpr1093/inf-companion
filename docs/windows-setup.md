@@ -55,6 +55,27 @@ uv run inf-companion
   settings link is also at the bottom-right of the display.
 - To keep data somewhere else: `uv run inf-companion --data-dir E:\companion-data`.
 
+## Screen capture
+
+The app watches INFINITAS with **dxcam** (it was the fastest and lightest in the capture
+spike). It needs inf-notebook's recognition tables, converted once:
+
+```powershell
+cd D:\code\inf-companion
+uv run python tools/convert_tables.py
+```
+
+This writes `tables\` (ignored by git). Run it again after an update only if the app
+says the tables are missing or unusable.
+
+- `uv run inf-companion` captures automatically on Windows. Start INFINITAS before or
+  after the app; it finds the game window by itself, on any monitor.
+- To check it, open `http://127.0.0.1:8765/?debug=1`. The label in the corner shows the
+  screen the app sees: `music_select`, `play`, `result`, and so on.
+- Turn capture off with `uv run inf-companion --capture off`.
+- Only the 1P play screen is recognised for now. If you play 2P, the status says play
+  detection is off until 2P screenshots are calibrated.
+
 ## Update
 
 ```powershell
