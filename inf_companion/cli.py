@@ -1,6 +1,7 @@
 """Command-line entry point: `inf-companion`."""
 
 import argparse
+import sys
 from pathlib import Path
 
 import inf_companion
@@ -14,10 +15,20 @@ def parse_args(argv: list[str] | None) -> argparse.Namespace:
     p.add_argument("--data-dir", default=None, help="data folder (default: $INF_COMPANION_DATA or ./data)")
     p.add_argument("--no-input", action="store_true", help="don't read the controller (no SDL)")
     p.add_argument("--tables-dir", default="tables", help="converted recognition tables (default ./tables)")
-    p.add_argument("--capture", choices=["off", "replay"], default="off", help="screen capture backend (default off)")
+    p.add_argument("--capture", choices=["auto", "off", "dxcam", "replay"], default="auto",
+                   help="screen capture backend (default auto: dxcam on Windows, off elsewhere)")
     p.add_argument("--source", default=None, help="replay: folder of screenshots or one image")
     p.add_argument("--replay-fps", type=float, default=None, help="replay: frames per second (default: adaptive)")
-    return p.parse_args(argv)
+    args = p.parse_args(argv)
+    if args.capture == "auto":
+        args.capture = default_capture(sys.platform)
+    if args.replay_fps is not None and args.replay_fps <= 0:
+        p.error("--replay-fps must be greater than 0")
+    return args
+
+
+def default_capture(platform: str) -> str:
+    return "dxcam" if platform == "win32" else "off"
 
 
 def main(argv: list[str] | None = None) -> int:

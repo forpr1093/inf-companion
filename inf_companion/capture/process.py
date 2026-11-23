@@ -80,6 +80,9 @@ def _run_child(kind: str, source_path: str, tables_dir: str, side: str, q, stop,
     if kind == "replay":
         from inf_companion.capture.replay import ReplaySource
         source = ReplaySource(Path(source_path))
+    elif kind == "dxcam":
+        from inf_companion.capture.dxcam_source import open_dxcam
+        source = open_dxcam()
     else:
         raise ValueError(f"unknown capture backend {kind!r}")
     try:

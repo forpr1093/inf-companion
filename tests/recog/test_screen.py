@@ -93,3 +93,20 @@ def test_play_reference_notice():
     assert play_reference_notice("1P") is None
     msg = play_reference_notice("2P")
     assert "2P" in msg and "calibrate_screens.py" in msg
+
+
+@needs_tables
+def test_play_wins_when_score_digits_hit_a_table_entry(tables):
+    """The screentransition area sits on the in-game score; digits can sum to its value."""
+    frame = load(sorted((FIXTURES / "play_1p").glob("*.png"))[0]).copy()
+    entry = tables.screen["get_screen"]["screentransition"]
+    a = entry["area"]
+    patch = frame[a["top"]:a["top"] + a["height"], a["left"]:a["left"] + a["width"]]
+    patch[...] = 0
+    flat = patch.reshape(-1)
+    remaining = entry["value"]
+    for i in range(flat.size):
+        flat[i] = min(255, remaining)
+        remaining -= int(flat[i])
+    assert area_key(frame, a) == entry["value"]
+    assert classify(frame, tables, "1P") == "play"
