@@ -233,13 +233,20 @@ class DxcamGrabber:
                 raise RuntimeError("no DXGI output matches the INFINITAS monitor")
         self.picked = f"adapter {device_idx}, output {output_idx}"
         print(f"  dxcam: {self.picked}, monitor {self.monitor}")
-        self.cam = dxcam.create(device_idx=device_idx, output_idx=output_idx, output_color="RGB")
+        # Raw BGRA frames and the numpy processor: dxcam's default colour conversion needs
+        # OpenCV (cv2), which this project doesn't use. We convert BGRA -> RGB ourselves.
+        try:
+            self.cam = dxcam.create(device_idx=device_idx, output_idx=output_idx,
+                                    output_color="BGRA", processor_backend="numpy")
+        except TypeError:  # older dxcam without processor_backend
+            self.cam = dxcam.create(device_idx=device_idx, output_idx=output_idx, output_color="BGRA")
 
     def grab(self) -> np.ndarray | None:
         frame = self.cam.grab()  # None when nothing changed since the last grab
         if frame is None:
             return None
-        return crop_to_client(frame, _client_rect(self.hwnd), self.monitor)
+        rgb = np.ascontiguousarray(frame[:, :, 2::-1])  # BGRA -> RGB
+        return crop_to_client(rgb, _client_rect(self.hwnd), self.monitor)
 
     def close(self) -> None:
         try:
@@ -312,9 +319,14 @@ def main(argv: list[str] | None = None) -> int:
                 continue
             try:
                 samples = run_one(grabber, a.seconds, target, a.save_every, out / "frames" / key.replace(" ", "").replace("@", "_"))
+                results[key] = summarise(samples)
+            except Exception as e:  # one method failing mid-run must not stop the others
+                results[key] = {**summarise([]), "status": f"error: {type(e).__name__}: {e}"}
             finally:
-                grabber.close()
-            results[key] = summarise(samples)
+                try:
+                    grabber.close()
+                except Exception:
+                    pass
             print(f"  {results[key]}")
     if hwnd is None:
         print(f"No window titled '{TITLE}' was found. Start INFINITAS first.")
