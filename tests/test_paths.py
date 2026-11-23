@@ -19,3 +19,8 @@ def test_default_is_cwd_data(tmp_path, monkeypatch):
 def test_parse_args_defaults():
     a = parse_args([])
     assert (a.host, a.port, a.data_dir, a.no_input) == ("127.0.0.1", 8765, None, False)
+
+
+def test_tables_dir_option():
+    assert parse_args([]).tables_dir == "tables"
+    assert parse_args(["--tables-dir", "E:/t"]).tables_dir == "E:/t"

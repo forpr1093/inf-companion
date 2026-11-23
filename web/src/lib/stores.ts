@@ -1,7 +1,7 @@
 import { writable, get } from "svelte/store";
 import { connect, type Status } from "./ws";
 import { applyKey } from "./counter/counts";
-import { DEFAULTS, emptyCounts, type Chart, type PersonalBest, type RecentPlay, type Binding, type Counts, type DeviceInfo, type KeyEvent, type ServerEvent, type Settings, type Target } from "./events";
+import { DEFAULTS, emptyCounts, type CaptureStatus, type Screen, type Chart, type PersonalBest, type RecentPlay, type Binding, type Counts, type DeviceInfo, type KeyEvent, type ServerEvent, type Settings, type Target } from "./events";
 
 export const status = writable<Status>("connecting");
 export const settings = writable<Settings>({ ...DEFAULTS });
@@ -12,6 +12,8 @@ export const gifVersion = writable(0);
 export const bindProgress = writable<{ target: Target; index: number; total: number } | null>(null);
 export const counts = writable<Counts>(emptyCounts());
 export const lastError = writable<string | null>(null);
+export const screen = writable<Screen | null>(null);
+export const captureStatus = writable<CaptureStatus>({ state: "off" });
 export const nowPlaying = writable<Chart | null>(null);
 /** Best for the current chart; null means not played yet (or no chart). */
 export const personalBest = writable<PersonalBest | null>(null);
@@ -39,6 +41,7 @@ export function applyEvent(e: ServerEvent): void {
       settings.set(e.settings); devices.set(e.devices); bindings.set(e.bindings);
       hasGif.set(e.has_gif); counts.set(e.counts); bindProgress.set(e.binding ?? null);
       gifVersion.set(e.gif_version ?? 0);
+      screen.set(e.screen ?? null); captureStatus.set(e.capture_status ?? { state: "off" });
       break;
     case "settings": settings.set(e.settings); break;
     case "devices": devices.set(e.devices); break;
@@ -55,6 +58,12 @@ export function applyEvent(e: ServerEvent): void {
     case "chart": nowPlaying.set(e.chart); break;
     case "personal_best": personalBest.set(e.best); break;
     case "recent_plays": recentPlays.set(e.plays); break;
+    case "screen": screen.set(e.screen); break;
+    case "capture_status": {
+      const { type: _t, at: _a, ...status } = e;
+      captureStatus.set(status);
+      break;
+    }
   }
   for (const fn of eventListeners) fn(e);
 }
