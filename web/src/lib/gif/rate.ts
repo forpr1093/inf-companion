@@ -35,3 +35,20 @@ export function fitContain(w: number, h: number, cellW: number, cellH: number): 
   const dw = w * s, dh = h * s;
   return { x: (cellW - dw) / 2, y: (cellH - dh) / 2, w: dw, h: dh };
 }
+
+/** Decoding more than this many pixels (frames × width × height) is refused outright. */
+export const DECODE_LIMIT_PX = 200_000_000;
+/** Stored frames are scaled so their total stays under this (~96 MB of RGBA). */
+export const STORE_LIMIT_PX = 24_000_000;
+/** Stored frames are at most this many pixels on their long side (the cell is small). */
+export const MAX_SIDE_PX = 640;
+
+/** Whether to decode a GIF, and how much to shrink its frames when storing them. */
+export function gifPlan(frames: number, w: number, h: number): { ok: true; scale: number } | { ok: false; reason: string } {
+  const total = frames * w * h;
+  if (total > DECODE_LIMIT_PX) {
+    return { ok: false, reason: `This GIF is too large (${frames} frames at ${w}×${h}). Try a shorter or smaller one.` };
+  }
+  const scale = Math.min(1, MAX_SIDE_PX / Math.max(w, h), Math.sqrt(STORE_LIMIT_PX / total));
+  return { ok: true, scale };
+}

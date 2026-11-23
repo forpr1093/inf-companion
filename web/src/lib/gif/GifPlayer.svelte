@@ -1,8 +1,10 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import { decompressFrames, parseGIF } from "gifuct-js";
+  import { decompressFrame, parseGIF } from "gifuct-js";
   import { gifVersion, hasGif, nowPlaying, settings } from "../stores";
-  import { fitContain, frameAt, loopRate, normaliseDelays, phaseKeepingStart } from "./rate";
+  import { fitContain, frameAt, gifPlan, loopRate, normaliseDelays, phaseKeepingStart } from "./rate";
+
+  type GifFrame = Parameters<typeof decompressFrame>[0];
 
   let host: HTMLDivElement;
   let canvas: HTMLCanvasElement;
@@ -22,41 +24,60 @@
   let loadedVersion = -1;
   let raf = 0;
 
-  /** Composite every frame once (honouring disposal), so playback is just drawImage. */
+  /**
+   * Decode and composite the GIF once (honouring disposal), storing each frame shrunk to
+   * the budget from gifPlan. Frames are decoded one by one with pauses, so the lane keeps
+   * running while a big GIF loads. A newer upload supersedes a load still in progress.
+   */
   async function load(version: number) {
     loadedVersion = version;
     error = null;
+    const stale = () => version !== loadedVersion;
     try {
       const r = await fetch(`/api/gif?v=${version}`, { cache: "no-store" });
+      if (stale()) return;
       if (!r.ok) { frames = []; return; }
       const gif = parseGIF(await r.arrayBuffer());
-      const parsed = decompressFrames(gif, true);
-      if (parsed.length === 0) throw new Error("The GIF has no frames.");
-      gifW = gif.lsd.width; gifH = gif.lsd.height;
+      if (stale()) return;
+      const raw = gif.frames.filter((f): f is GifFrame => "image" in f);
+      if (raw.length === 0) throw new Error("The GIF has no frames.");
+      const w = gif.lsd.width, h = gif.lsd.height;
+      const plan = gifPlan(raw.length, w, h);
+      if (!plan.ok) { frames = []; error = plan.reason; return; }
+      const sw = Math.max(1, Math.round(w * plan.scale)), sh = Math.max(1, Math.round(h * plan.scale));
       const full = document.createElement("canvas");
-      full.width = gifW; full.height = gifH;
+      full.width = w; full.height = h;
       const ctx = full.getContext("2d")!;
       const patch = document.createElement("canvas");
       const pctx = patch.getContext("2d")!;
       const out: HTMLCanvasElement[] = [];
-      for (const f of parsed) {
-        const before = f.disposalType === 3 ? ctx.getImageData(0, 0, gifW, gifH) : null;
+      const outDelays: number[] = [];
+      for (let i = 0; i < raw.length; i++) {
+        const f = decompressFrame(raw[i], gif.gct, true);
+        const before = f.disposalType === 3 ? ctx.getImageData(0, 0, w, h) : null;
         patch.width = f.dims.width; patch.height = f.dims.height;
         pctx.putImageData(new ImageData(new Uint8ClampedArray(f.patch), f.dims.width, f.dims.height), 0, 0);
         ctx.drawImage(patch, f.dims.left, f.dims.top);
         const snap = document.createElement("canvas");
-        snap.width = gifW; snap.height = gifH;
-        snap.getContext("2d")!.drawImage(full, 0, 0);
+        snap.width = sw; snap.height = sh;
+        snap.getContext("2d")!.drawImage(full, 0, 0, sw, sh);
         out.push(snap);
+        outDelays.push(f.delay);
         if (f.disposalType === 2) ctx.clearRect(f.dims.left, f.dims.top, f.dims.width, f.dims.height);
         else if (before) ctx.putImageData(before, 0, 0);
+        if (i % 8 === 7) {
+          await new Promise(res => setTimeout(res, 0));
+          if (stale()) return;
+        }
       }
       frames = out;
-      delays = normaliseDelays(parsed.map(f => f.delay));
+      gifW = sw; gifH = sh;
+      delays = normaliseDelays(outDelays);
       loopMs = delays.reduce((a, b) => a + b, 0);
       start = performance.now();
       rate = loopRate(bpm, beats, loopMs);
     } catch (e) {
+      if (stale()) return;
       frames = [];
       error = (e as Error).message || "Couldn't read the GIF.";
     }
