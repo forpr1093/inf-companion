@@ -172,3 +172,11 @@ def test_replay_fps_must_be_positive():
     from inf_companion.cli import parse_args
     with pytest.raises(SystemExit):
         parse_args(["--replay-fps", "-1"])
+
+
+def test_dxcam_recovery_warnings_are_quiet():
+    import logging
+    from inf_companion.capture.dxcam_source import quiet_dxcam_logs
+    quiet_dxcam_logs()
+    assert not logging.getLogger("dxcam.core.dxgi_duplicator").isEnabledFor(logging.WARNING)
+    assert logging.getLogger("dxcam.dxcam").isEnabledFor(logging.ERROR)

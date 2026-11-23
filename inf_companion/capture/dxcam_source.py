@@ -10,6 +10,7 @@ closes; the Windows calls are injected so this logic is tested on any platform.
 
 from __future__ import annotations
 
+import logging
 import time
 from collections.abc import Callable
 from typing import Any
@@ -99,9 +100,16 @@ def make_dxcam_camera(hmon: int) -> Any:
     raise RuntimeError("no DXGI output matches the monitor INFINITAS is on")
 
 
+def quiet_dxcam_logs() -> None:
+    """dxcam warns on every desktop-duplication access loss (fullscreen switches, alt-tab)
+    and recovers by itself; keep its errors, drop the warnings."""
+    logging.getLogger("dxcam").setLevel(logging.ERROR)
+
+
 def open_dxcam() -> DxcamSource:
     from inf_companion.capture import win32
 
+    quiet_dxcam_logs()
     win32.set_dpi_aware()
     return DxcamSource(find=win32.find_window, client_rect=win32.client_rect,
                        monitor_of=win32.monitor_of, make_camera=make_dxcam_camera)
