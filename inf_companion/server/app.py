@@ -28,7 +28,9 @@ GIF_NAME = "loop.gif"
 class InputLike(Protocol):
     def devices(self) -> list[DeviceInfo]: ...
     def counts(self) -> dict[str, int]: ...
-    def handle_client(self, msg: dict) -> None: ...
+    def binding_state(self) -> dict | None: ...
+    def handle_client(self, msg: dict, client: object = None) -> None: ...
+    def client_gone(self, client: object) -> None: ...
 
 
 @dataclass
@@ -44,6 +46,8 @@ class AppContext:
 
 def create_app(ctx: AppContext) -> Starlette:
     gif_path = ctx.data_dir / GIF_NAME
+    if ctx.gif_version == 0 and gif_path.is_file():
+        ctx.gif_version = gif_path.stat().st_mtime_ns // 1_000_000
 
     def hello() -> dict:
         return make_event(
@@ -54,6 +58,8 @@ def create_app(ctx: AppContext) -> Starlette:
             bindings={g: b.to_json() for g, b in ctx.bindings.all().items()},
             has_gif=gif_path.is_file(),
             counts=ctx.input.counts() if ctx.input else {t: 0 for t in TARGETS},
+            binding=ctx.input.binding_state() if ctx.input else None,
+            gif_version=ctx.gif_version,
         )
 
     async def get_settings(request: Request) -> Response:
@@ -85,7 +91,9 @@ def create_app(ctx: AppContext) -> Starlette:
         with os.fdopen(fd, "wb") as f:
             f.write(body)
         os.replace(tmp, gif_path)
-        ctx.gif_version += 1
+        # The file's modified time in ms: the same value a restarted app reads back, and
+        # never reused, so a page that stayed open across a restart still reloads.
+        ctx.gif_version = max(gif_path.stat().st_mtime_ns // 1_000_000, ctx.gif_version + 1)
         ctx.bus.publish(make_event("gif", version=ctx.gif_version))
         return Response(status_code=204)
 
@@ -96,6 +104,7 @@ def create_app(ctx: AppContext) -> Starlette:
 
     async def ws_endpoint(ws: WebSocket) -> None:
         await ws.accept()
+        client = object()  # identifies this page, e.g. as the owner of a binding session
         sub = ctx.bus.subscribe()
         try:
             await ws.send_json(hello())
@@ -111,7 +120,7 @@ def create_app(ctx: AppContext) -> Starlette:
                     if not isinstance(msg, dict):
                         continue
                     if ctx.input:
-                        ctx.input.handle_client(msg)
+                        ctx.input.handle_client(msg, client)
                     elif msg.get("type") == "counts_reset":
                         # No controller reading (--no-input): counts are always zero.
                         ctx.bus.publish(make_event("counts", counts={t: 0 for t in TARGETS}))
@@ -123,6 +132,8 @@ def create_app(ctx: AppContext) -> Starlette:
                     await sender
         finally:
             sub.close()
+            if ctx.input:
+                ctx.input.client_gone(client)
 
     async def not_built(request: Request) -> Response:
         return PlainTextResponse("inf-companion: web page not built; run npm run build in web/")

@@ -127,3 +127,20 @@ def test_unknown_client_message_ignored(svc, bus):
     svc.handle_client({"type": "nope"})
     svc.handle_client({})
     assert events(bus) == []
+
+
+def test_binding_cancelled_when_its_page_goes_away(svc, bus):
+    svc.handle_client({"type": "bind_start"}, client="a")
+    svc.client_gone("b")                       # another page closing changes nothing
+    svc.handle_raw(RawEvent("g1", "button", 0, 1, 1.0))
+    assert events(bus, "key_down") == []       # still binding
+    svc.client_gone("a")
+    assert events(bus)[-1]["type"] == "bind_cancelled"
+    svc.handle_raw(RawEvent("g1", "button", 1, 1, 2.0))
+    assert events(bus, "key_down")[-1]["lane"] == "2"
+
+
+def test_binding_state_is_reported_for_hello(svc):
+    assert svc.binding_state() is None
+    svc.handle_client({"type": "bind_start"}, client="a")
+    assert svc.binding_state() == {"target": "1", "index": 0, "total": 9}

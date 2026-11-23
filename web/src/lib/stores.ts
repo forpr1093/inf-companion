@@ -37,7 +37,8 @@ export function applyEvent(e: ServerEvent): void {
   switch (e.type) {
     case "hello":
       settings.set(e.settings); devices.set(e.devices); bindings.set(e.bindings);
-      hasGif.set(e.has_gif); counts.set(e.counts); bindProgress.set(null);
+      hasGif.set(e.has_gif); counts.set(e.counts); bindProgress.set(e.binding ?? null);
+      gifVersion.set(e.gif_version ?? 0);
       break;
     case "settings": settings.set(e.settings); break;
     case "devices": devices.set(e.devices); break;

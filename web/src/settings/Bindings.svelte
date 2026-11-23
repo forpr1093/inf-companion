@@ -1,10 +1,15 @@
 <script lang="ts">
+  import { onDestroy } from "svelte";
+  import { get } from "svelte/store";
   import { bindProgress, bindings, devices, send } from "../lib/stores";
   import { TARGETS } from "../lib/events";
   import { bindPrompt, sourceText, targetName } from "./bindText";
 
   const start = () => send({ type: "bind_start" });
   const cancel = () => send({ type: "bind_cancel" });
+  // Leaving the settings page mid-binding cancels it; otherwise the controller would stay
+  // captured by the binding and the lane would go dead.
+  onDestroy(() => { if (get(bindProgress)) cancel(); });
 </script>
 
 <section class="block">

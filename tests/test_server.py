@@ -50,9 +50,10 @@ def test_gif_upload_broadcasts_version(client):
         ws.receive_json()
         client.put("/api/gif", content=b"GIF87a" + b"\x00" * 4, headers={"content-type": "image/gif"})
         ev = ws.receive_json()
-        assert ev["type"] == "gif" and ev["version"] == 1
+        assert ev["type"] == "gif" and ev["version"] > 0
     with client.websocket_connect("/ws") as ws:
-        assert ws.receive_json()["has_gif"] is True
+        hello = ws.receive_json()
+        assert hello["has_gif"] is True and hello["gif_version"] == ev["version"]
 
 
 def test_gif_missing_404(client):
@@ -80,3 +81,64 @@ def test_counts_reset_without_input_sends_zeros(client):
 def test_skin_routes_are_gone(client):
     assert client.get("/api/skin").status_code == 404
     assert client.get("/skin/play/parts/notes/default.png").status_code == 404
+
+
+class FakeInput:
+    def __init__(self):
+        self.calls = []
+
+    def devices(self):
+        return []
+
+    def counts(self):
+        return {t: 0 for t in TARGETS}
+
+    def binding_state(self):
+        return {"target": "3", "index": 2, "total": 9}
+
+    def handle_client(self, msg, client=None):
+        self.calls.append(("msg", msg["type"], client))
+
+    def client_gone(self, client):
+        self.calls.append(("gone", client))
+
+
+def test_ws_passes_client_id_and_reports_disconnect(ctx):
+    from starlette.testclient import TestClient
+    from inf_companion.server.app import create_app
+    fake = FakeInput()
+    ctx.input = fake
+    with TestClient(create_app(ctx)) as c:
+        with c.websocket_connect("/ws") as ws:
+            hello = ws.receive_json()
+            assert hello["binding"] == {"target": "3", "index": 2, "total": 9}
+            ws.send_json({"type": "bind_start"})
+            ws.send_json({"type": "counts_reset"})
+        # the socket closed: the server must tell the input service
+        import time
+        for _ in range(50):
+            if any(k == "gone" for k, *_ in fake.calls):
+                break
+            time.sleep(0.01)
+    kinds = [c[0] for c in fake.calls]
+    msg_clients = {c[2] for c in fake.calls if c[0] == "msg"}
+    gone = [c[1] for c in fake.calls if c[0] == "gone"]
+    assert kinds.count("msg") == 2 and len(msg_clients) == 1 and gone == list(msg_clients)
+
+
+def test_hello_reports_gif_version_and_uploads_always_change_it(ctx, tmp_path):
+    from starlette.testclient import TestClient
+    from inf_companion.server.app import create_app
+    gif = b"GIF89a" + b"\x00" * 10
+    with TestClient(create_app(ctx)) as c:
+        c.put("/api/gif", content=gif, headers={"content-type": "image/gif"})
+        with c.websocket_connect("/ws") as ws:
+            v1 = ws.receive_json()["gif_version"]
+    assert v1 > 0
+    # simulate an app restart: a fresh app over the same data folder
+    ctx.gif_version = 0
+    with TestClient(create_app(ctx)) as c:
+        with c.websocket_connect("/ws") as ws:
+            assert ws.receive_json()["gif_version"] == v1   # same file, same version
+            c.put("/api/gif", content=gif, headers={"content-type": "image/gif"})
+            assert ws.receive_json()["version"] != v1       # a new upload never reuses a version

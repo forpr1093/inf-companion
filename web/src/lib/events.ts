@@ -45,7 +45,8 @@ export interface RecentPlay {
 export interface KeyEvent { type: "key_down" | "key_up"; lane: Lane; dir: "up" | "down" | null; t: number; at: number; }
 
 export type ServerEvent =
-  | { type: "hello"; at: number; version: string; settings: Settings; devices: DeviceInfo[]; bindings: Record<string, Binding>; has_gif: boolean; counts: Counts }
+  | { type: "hello"; at: number; version: string; settings: Settings; devices: DeviceInfo[]; bindings: Record<string, Binding>; has_gif: boolean; counts: Counts;
+      binding: { target: Target; index: number; total: number } | null; gif_version: number }
   | { type: "settings"; at: number; settings: Settings }
   | { type: "devices"; at: number; devices: DeviceInfo[] }
   | KeyEvent

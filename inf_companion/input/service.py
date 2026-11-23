@@ -44,6 +44,7 @@ class InputService:
         self._mapper = InputMapper(bindings.all())
         self._counter = PressCounter()
         self._session: BindingSession | None = None
+        self._session_owner: object = None
         self._devices: list[tuple[str, str]] = []
         factory = source_factory or _default_source_factory
         self._source = factory(on_raw=self.handle_raw, on_devices=self.handle_devices, on_idle=self.handle_idle)
@@ -111,10 +112,27 @@ class InputService:
                 self._emit_keys(self._mapper.tick(t))
 
     # -- page messages -------------------------------------------------------------------
-    def handle_client(self, msg: dict) -> None:
+    def binding_state(self) -> dict | None:
+        """The binding step in progress, for pages that connect mid-binding."""
+        with self._lock:
+            s = self._session
+            if s is None or s.current_target is None:
+                return None
+            return {"target": s.current_target, "index": s.index, "total": len(TARGETS)}
+
+    def client_gone(self, client: object) -> None:
+        """A page disconnected: cancel the binding it started, so input isn't swallowed."""
+        with self._lock:
+            if self._session is not None and self._session_owner == client:
+                self._session = None
+                self._session_owner = None
+                self._bus.publish(make_event("bind_cancelled"))
+
+    def handle_client(self, msg: dict, client: object = None) -> None:
         kind = msg.get("type") if isinstance(msg, dict) else None
         with self._lock:
             if kind == "bind_start":
+                self._session_owner = client
                 self._emit_keys(self._mapper.release_all(time.perf_counter() * 1000))
                 self._session = BindingSession(dict(self._devices))
                 self._emit_step()
