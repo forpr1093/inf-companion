@@ -9,6 +9,8 @@ dependencies = [
     "websockets",
     "pysdl2",
     "pysdl2-dll",
+    "numpy>=2.5.5",
+    "pillow>=13.0.0",
 ]
 
 [project.scripts]
