@@ -34,9 +34,11 @@
 </div>
 
 <style>
-  /* One layout for every screen size (user, 2026-11-23). Beside the lane, rows are
-     now playing : GIF + personal best : counter = 2 : 3 : 2, and the GIF and personal
-     best split their row 3 : 5. */
+  /* One layout for every screen size (user, 2026-11-23): 3 columns × 5 rows.
+       col 1: lane (rows 1–4), button counter (row 5)
+       cols 2–3: now playing (row 1), GIF + personal best 3 : 5 (row 2),
+                 recent plays (rows 3–5)
+     Row heights are ratios, never content, so data never moves the layout. */
   .display {
     height: 100vh;
     display: grid;
@@ -44,28 +46,29 @@
     padding: 18px;
     position: relative;
     grid-template-columns: auto minmax(0, 3fr) minmax(0, 5fr);
-    grid-template-rows: minmax(0, 2fr) minmax(0, 3fr) minmax(0, 2fr) auto;
+    grid-template-rows: minmax(0, 2fr) minmax(0, 3fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 2fr);
     grid-template-areas:
       "lane now now"
       "lane gif pb"
-      "lane counter counter"
-      "recent recent recent";
+      "lane recent recent"
+      "lane recent recent"
+      "counter recent recent";
   }
   .display.p2 {
     grid-template-columns: minmax(0, 3fr) minmax(0, 5fr) auto;
     grid-template-areas:
       "now now lane"
       "gif pb lane"
-      "counter counter lane"
-      "recent recent recent";
+      "recent recent lane"
+      "recent recent lane"
+      "recent recent counter";
   }
   .lane-area { grid-area: lane; height: 100%; aspect-ratio: 0.62; min-height: 0; }
-  /* Row heights come from fr ratios, never from content, so data never moves the layout. */
   .now { grid-area: now; min-width: 0; min-height: 0; container-type: size; }
-  .pb { grid-area: pb; min-width: 0; min-height: 0; container-type: size; }
+  .pb { grid-area: pb; min-width: 0; min-height: 0; }
   .counter-area { grid-area: counter; min-height: 0; min-width: 0; display: grid; place-items: center; overflow: hidden; container-type: size; }
   .gif-area { grid-area: gif; min-height: 0; min-width: 0; }
-  .recent { grid-area: recent; min-height: 0; min-width: 0; height: calc(36px + 2rem + 6 * 2.5rem); }
+  .recent { grid-area: recent; min-height: 0; min-width: 0; }
 
   .to-settings {
     position: absolute; right: 20px; bottom: 0; font-size: 0.75rem; color: var(--muted);

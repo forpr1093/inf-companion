@@ -13,9 +13,12 @@ test("held note grows from the judge line", () => {
   const n = f.frame(300)[0]; expect(n.bottom).toBe(0); expect(n.top).toBeCloseTo(0.3);
 });
 
-test("hold length is capped at the lane height", () => {
-  const f = new NoteField({ riseMs: 1000 }); f.press("S", 0);
-  const n = f.frame(5000)[0]; expect(n.top - n.bottom).toBeCloseTo(1);
+test("a hold that outgrows the lane fades out instead of sitting still", () => {
+  const f = new NoteField({ riseMs: 1000, fadeOutMs: 400 }); f.press("S", 0);
+  const full = f.frame(1000)[0]; expect(full.top).toBeCloseTo(1); expect(full.alpha).toBe(1);
+  const half = f.frame(1200)[0]; expect(half.top).toBeCloseTo(1); expect(half.alpha).toBeCloseTo(0.5);
+  expect(f.frame(1500)).toEqual([]);
+  expect(f.isHeld("S")).toBe(true); // still held, just not drawn
 });
 
 test("rapid presses each spawn a note", () => {
@@ -81,4 +84,22 @@ test("releaseAll clears held directions", () => {
   f.releaseAll(20);
   expect(f.isHeld("S")).toBe(false);
   expect(f.activeDir("S")).toBeNull();
+});
+
+
+test("short presses stay taps until held past the threshold", () => {
+  const f = new NoteField({ riseMs: 1000, longNoteMs: lane => (lane === "S" ? 600 : 200) });
+  f.press("1", 0);
+  expect(f.frame(150)[0]).toMatchObject({ bottom: 0, top: 0 });   // 150 ms: still a tap
+  expect(f.frame(300)[0].top).toBeCloseTo(0.1);                    // grows from the threshold, no jump
+  f.press("S", 0, "up");
+  expect(f.frame(500).find(n => n.lane === "S")!.top).toBe(0);     // scratch needs 600 ms
+  expect(f.frame(800).find(n => n.lane === "S")!.top).toBeCloseTo(0.2);
+});
+
+test("a quick press released under the threshold rises as a tap", () => {
+  const f = new NoteField({ riseMs: 1000, longNoteMs: () => 200 });
+  f.press("2", 0); f.release("2", 150);
+  const n = f.frame(650)[0];
+  expect(n.bottom).toBeCloseTo(0.5); expect(n.top - n.bottom).toBeCloseTo(0);
 });

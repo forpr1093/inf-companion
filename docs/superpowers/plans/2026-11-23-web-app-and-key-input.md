@@ -920,6 +920,18 @@ test("panel events land in stores", () => { /* applyEvent chart / personal_best 
 - **Personal best stack:** a muted "Personal best" header, clear type (small), DJ grade from `djLevel` (large), EX score (medium) with the `djBorder` label beside it (small), then misses (small), and last played (small) pinned to the bottom right.
 - **Task 14:** the GIF fills the `gif` cell and is fitted inside it (contain), so it's not always square.
 
+## Revision 6 (user, 2026-11-23, after Tasks 13–15)
+
+- **Layout: 3 × 5.**
+  - Column 1: the lane in rows 1–4, the counter in row 5.
+  - Columns 2–3: now playing (row 1), GIF + personal best at 3 : 5 (row 2), recent plays (rows 3–5).
+  - Rows are `2fr 3fr 1fr 1fr 2fr`.
+  - Recent plays shows as many whole 40 px rows as fit.
+- **Personal best:** fixed rem text sizes, no container-relative sizing.
+- **NoteField:**
+  - `longNoteMs(lane)`: the lane uses 220 ms for keys and 600 ms for scratch. The length counts only time held past the threshold.
+  - `fadeOutMs` (400): a hold that has filled the lane fades out.
+
 ## Roadmap: Plans 2 and 3 (written after this plan ships)
 
 Each gets its own writing-plans pass, because each depends on results that don't exist yet: spike numbers and fixture screenshots.

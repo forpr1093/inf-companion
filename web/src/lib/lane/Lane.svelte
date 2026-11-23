@@ -10,13 +10,17 @@
   const BEAM_FADE_MS = 200;
   const JUDGE = 0.8; // judge line at 80% of the height
   const BEAM_BANDS = 14;
-  const NOTE_H = 19; // note height in lane units (the lane is 576 wide)
+  const NOTE_H = 19;
+  const KEY_LN_MS = 220;     // a key held this long becomes a long note
+  const SCRATCH_LN_MS = 600; // the same for scratch // note height in lane units (the lane is 576 wide)
 
   let host: HTMLDivElement;
   let latency = $state<{ mean: number; p95: number } | null>(null);
 
   onMount(() => {
-    const field = new NoteField();
+    // Quick presses stay taps. Scratch needs much longer: an analog turntable keeps
+    // "holding" briefly after the hand leaves it.
+    const field = new NoteField({ longNoteMs: lane => (lane === "S" ? SCRATCH_LN_MS : KEY_LN_MS) });
     const app = new Application();
     const bg = new Graphics(); // lanes, dividers, judge line: redrawn on resize/theme
     const beamsG = new Graphics();
@@ -116,7 +120,7 @@
           const yTop = Math.min(judgeY - n.top * judgeY, yBottom - minH);
           const len = yBottom - yTop;
           const color = colors[l.color];
-          if (len > minH * 4) {
+          if (len > minH * 1.5) {
             // Long note: a translucent body between two caps, like a charge note.
             notesG.rect(l.x + l.w * 0.12, yTop + minH / 2, l.w * 0.76, len - minH).fill({ color, alpha: 0.45 * n.alpha });
             notesG.rect(l.x + l.w / 2 - 1, yTop + minH, 2, len - minH * 2).fill({ color: "#ffffff", alpha: 0.35 * n.alpha });

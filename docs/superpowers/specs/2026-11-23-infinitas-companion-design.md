@@ -199,32 +199,39 @@ Windows gaming PC                                      Second monitor
 ### 5.8 Web page (`web/`)
 - Vite + Svelte. The build is static files served by the Python app. Node is only
   needed on the Mac.
-- **Layout** (user, 2026-11-23): one grid for the second monitor, the same at every
-  screen size. Portrait is not designed for.
+- **Layout** (user, 2026-11-23): one grid for the second monitor, 3 columns × 5 rows, the
+  same at every screen size. Portrait is not designed for.
 
   ```
   ┌────────────┬──────────────────────────────┐
   │            │ Now playing                  │  2
-  │            ├───────┬──────────────────────┤
-  │ IIDX lane  │  GIF  │ Personal best        │  3   (GIF : personal best = 3 : 5 wide)
-  │ (rows 1–3) ├───────┴──────────────────────┤
-  │            │ Button counter               │  2
-  ├────────────┴──────────────────────────────┤
-  │ Recent plays (fixed height, six rows)     │
-  └───────────────────────────────────────────┘
+  │            ├─────────┬────────────────────┤
+  │ IIDX lane  │  GIF    │ Personal best      │  3   (GIF : personal best = 3 : 5 wide)
+  │ (rows 1–4) ├─────────┴────────────────────┤
+  │            │                              │  1
+  │            │ Recent plays (rows 3–5)      │  1
+  ├────────────┤                              │
+  │ Counter    │                              │  2
+  └────────────┴──────────────────────────────┘
   ```
 
-  Row heights beside the lane are ratios (2 : 3 : 2), so data never moves the layout.
-  For 2P the lane moves to the right column. The GIF stays left of personal best
-  (builder's call). The GIF is fitted inside its cell without stretching.
+  Row heights are ratios (2 : 3 : 1 : 1 : 2), so data never moves the layout. Recent
+  plays shows as many whole rows as fit. For 2P the lane and counter move to the right
+  column. Personal best text sizes are fixed: resizing the window moves them, never
+  resizes them.
 - **Lane:** scratch plus 7 keys, drawn with PixiJS (WebGL). Each `key_down` spawns a
   note that floats up from the judge line and fades, and the note grows while the key
   is held. The scratch sits on the left for 1P and on the right for 2P. Notes appear
   only for presses: there's no chart, and nothing falls.
   - Everything is drawn (user, 2026-11-23): dark lanes with thin dividers, a red judge
     line, white and blue key caps, a turntable disc that spins with scratch, a soft beam
-    on each press, and notes as bars with a highlight. A press held longer than about
-    120 ms draws as a long note: a translucent body between two note caps.
+    on each press, and notes as bars with a highlight.
+  - **Long notes** (user, 2026-11-23): a press becomes a long note only after it's held
+    past a threshold: 220 ms for keys, 600 ms for scratch. The scratch threshold is much
+    higher because an analog turntable keeps "holding" briefly after the hand leaves it.
+    The note then grows from zero, without jumping. A long note is a translucent body
+    between two note caps. Once a hold has filled the lane, it fades out over 400 ms
+    rather than sitting still.
 - **Button counter** (user, 2026-11-23), like the user's reference screenshot:
   - Keys 2, 4 and 6 are in the top row and 1, 3, 5 and 7 in the bottom row. Each box
     shows how many times that key was pressed.

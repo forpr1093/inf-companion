@@ -2,7 +2,10 @@
   import { recentPlays } from "../lib/stores";
   import { DIFF_VAR, djBorder } from "../lib/score";
 
-  const MAX_ROWS = 6;
+  const ROW_PX = 40; // matches tr { height: 2.5rem }
+  let listH = $state(0);
+  // Show as many whole rows as fit; the panel's height comes from the grid, not the data.
+  const rows = $derived(Math.max(0, Math.floor(listH / ROW_PX)));
 </script>
 
 <div class="panel recent"><div class="inner">
@@ -10,9 +13,9 @@
   {#if $recentPlays.length === 0}
     <p class="empty">No plays yet</p>
   {:else}
-    <table>
+    <div class="list" bind:clientHeight={listH}><table>
       <tbody>
-        {#each $recentPlays.slice(0, MAX_ROWS) as p (p.played_at + p.title)}
+        {#each $recentPlays.slice(0, rows) as p (p.played_at + p.title)}
           {@const b = djBorder(p.score, p.notes)}
           <tr style:--c={DIFF_VAR[p.difficulty]}>
             <td class="diff"><span>{p.difficulty}</span></td>
@@ -23,13 +26,14 @@
           </tr>
         {/each}
       </tbody>
-    </table>
+    </table></div>
   {/if}
 </div></div>
 
 <style>
   .recent { height: 100%; }
-  .recent .inner { overflow: hidden; }
+  .recent .inner { overflow: hidden; display: flex; flex-direction: column; }
+  .list { flex: 1; min-height: 0; overflow: hidden; }
   .empty { margin: 0; font-size: 1.2rem; color: var(--muted); }
   table { width: 100%; border-collapse: collapse; font-size: 1.15rem; }
   tr + tr td { border-top: 1px solid var(--line); }

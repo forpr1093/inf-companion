@@ -33,17 +33,17 @@
 </div></div>
 
 <style>
-  /* The section around this panel is a size container: text scales with the cell. */
+  /* Fixed text sizes (user, 2026-11-23): resizing the window moves things, never resizes them. */
   .panel { height: 100%; }
   .inner { display: flex; flex-direction: column; gap: 0.2em; }
   p { margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .empty { margin-top: 0.3em; font-size: clamp(1.1rem, 10cqh, 1.8rem); color: var(--muted); }
-  .clear { font-size: clamp(0.85rem, 7cqh, 1.25rem); font-weight: 600; font-stretch: 105%; }
-  .grade { font-size: clamp(2.2rem, min(30cqh, 14cqi), 6rem); font-weight: 700; font-stretch: 90%; line-height: 1; }
-  .score { font-size: clamp(1.3rem, min(15cqh, 7cqi), 3rem); font-weight: 600; font-stretch: 88%; line-height: 1.1;
+  .empty { margin-top: 0.3em; font-size: 1.4rem; color: var(--muted); }
+  .clear { font-size: 1.1rem; font-weight: 600; font-stretch: 105%; }
+  .grade { font-size: 4.5rem; font-weight: 700; font-stretch: 90%; line-height: 1; }
+  .score { font-size: 2.2rem; font-weight: 600; font-stretch: 88%; line-height: 1.1;
     font-variant-numeric: tabular-nums; }
   .diff { margin-left: 0.6em; font-size: 0.5em; font-weight: 500; color: var(--muted); }
-  .meta { margin-top: 0.3em; font-size: clamp(0.8rem, 6cqh, 1.1rem); color: var(--muted); }
+  .meta { margin-top: 0.3em; font-size: 1rem; color: var(--muted); }
   /* Last played sits at the very end of the panel, on the right. */
   .last { margin-top: auto; align-self: flex-end; }
 </style>
