@@ -44,3 +44,14 @@ test("hello restores the chart and personal best; null leaves demo data alone", 
   applyEvent(hello({ chart: null, personal_best: null }));
   expect(get(nowPlaying)).toEqual(chart);
 });
+
+import { recentPlays } from "./stores";
+
+test("hello restores recent plays; an empty list leaves demo data alone", () => {
+  const play = { title: "Mermaid girl", difficulty: "HYPER", level: 8, score: 1228, notes: 856, option: null, played_at: "2026-11-27T12:00:00+00:00" };
+  recentPlays.set([]);
+  applyEvent(hello({ recent_plays: [play] }));
+  expect(get(recentPlays)).toEqual([play]);
+  applyEvent(hello({ recent_plays: [] }));
+  expect(get(recentPlays)).toEqual([play]);
+});

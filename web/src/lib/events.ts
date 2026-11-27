@@ -39,7 +39,7 @@ export interface PersonalBest {
 }
 
 export interface RecentPlay {
-  title: string; difficulty: Difficulty; level: number; score: number; notes: number | null;
+  title: string; difficulty: Difficulty; level: number | null; score: number; notes: number | null;
   option: string | null; played_at: string;
 }
 
@@ -51,7 +51,8 @@ export interface KeyEvent { type: "key_down" | "key_up"; lane: Lane; dir: "up" |
 export type ServerEvent =
   | { type: "hello"; at: number; version: string; settings: Settings; devices: DeviceInfo[]; bindings: Record<string, Binding>; has_gif: boolean; counts: Counts;
       binding: { target: Target; index: number; total: number } | null; gif_version: number;
-      screen: Screen | null; capture_status: CaptureStatus; chart?: Chart | null; personal_best?: PersonalBest | null }
+      screen: Screen | null; capture_status: CaptureStatus; chart?: Chart | null; personal_best?: PersonalBest | null;
+      recent_plays?: RecentPlay[] }
   | { type: "settings"; at: number; settings: Settings }
   | { type: "devices"; at: number; devices: DeviceInfo[] }
   | KeyEvent

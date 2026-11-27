@@ -74,8 +74,27 @@ def test_unknown_title_still_sent():
 
 
 def test_other_screens_reset_the_pair():
-    r = Reader(Queue(sel("A"), sel("A")), None, NOTESRADAR, "1P")
+    r = Reader(Queue(sel(title=None), sel(title=None)), None, NOTESRADAR, "1P")
     assert run(r, ["music_select", "play", "music_select"]) == []
+
+
+def test_leaving_select_commits_a_song_seen_once():
+    """Scroll fast and pick a song: it's seen on one frame only, then the screen changes."""
+    r = Reader(Queue(sel("A"), sel("A"), sel("B")), None, NOTESRADAR, "1P")
+    msgs = run(r, ["music_select"] * 3 + ["loading"])
+    assert [c["title"] for c in charts(msgs)] == ["A", "B"]
+    assert msgs[-1]["type"] == "personal_best"
+
+
+def test_leaving_select_skips_unknown_and_dp_reads():
+    r = Reader(Queue(sel("A"), sel("A"), sel("B"), sel(title=None), sel(playmode="DP")), None, NOTESRADAR, "1P")
+    msgs = run(r, ["music_select"] * 5 + ["loading"])
+    assert [c["title"] for c in charts(msgs)] == ["A", "B"]
+
+
+def test_leaving_select_doesnt_resend_the_same_chart():
+    r = Reader(Queue(sel("A"), sel("A")), None, NOTESRADAR, "1P")
+    assert len(charts(run(r, ["music_select"] * 2 + ["loading"]))) == 1
 
 
 def test_result_sent_once_when_complete():

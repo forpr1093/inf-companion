@@ -37,8 +37,8 @@ def main(argv: list[str] | None = None) -> int:
     import uvicorn
 
     from inf_companion.events import EventBus
-    from inf_companion.server.app import AppContext, create_app
-    from inf_companion.storage.db import BindingsRepo, SettingsRepo, open_db
+    from inf_companion.server.app import AppContext, create_app, record_plays
+    from inf_companion.storage.db import BindingsRepo, PlaysRepo, SettingsRepo, open_db
 
     args = parse_args(argv)
     data_dir = resolve_data_dir(args.data_dir)
@@ -47,6 +47,7 @@ def main(argv: list[str] | None = None) -> int:
         bus=EventBus(),
         settings=SettingsRepo(conn),
         bindings=BindingsRepo(conn),
+        plays=PlaysRepo(conn),
         data_dir=data_dir,
         static_dir=Path(inf_companion.__file__).parent / "web_dist",
     )
@@ -66,7 +67,7 @@ def main(argv: list[str] | None = None) -> int:
             return 2
         capture = start_capture(args.capture, args.source, Path(args.tables_dir).resolve(),
                                 ctx.settings.get_all()["side"], ctx.bus, fixed_fps=args.replay_fps,
-                                record_dir=args.record)
+                                record_dir=args.record, on_message=record_plays(ctx))
         ctx.capture = capture
     print(f"inf-companion {inf_companion.__version__}: data in {data_dir}")
     print(f"open http://{args.host}:{args.port}/")

@@ -6,6 +6,7 @@ back over a queue; a thread in the parent publishes them on the EventBus.
 
 from __future__ import annotations
 
+import logging
 import multiprocessing as mp
 import queue as queue_mod
 import threading
@@ -179,12 +180,20 @@ class CaptureHandle:
 
 
 def start_capture(kind: str, source_path, tables_dir, side: str, bus, fixed_fps: float | None = None,
-                  record_dir: str | None = None) -> CaptureHandle:
+                  record_dir: str | None = None,
+                  on_message: Callable[[dict], None] | None = None) -> CaptureHandle:
+    """`on_message` sees every message from capture (e.g. to store results). Its errors are
+    logged and never stop capture."""
     handle = CaptureHandle()
 
     def publish(msg: dict) -> None:
         handle.remember(msg)
         bus.publish(make_event(**msg))
+        if on_message is not None:
+            try:
+                on_message(msg)
+            except Exception:
+                logging.getLogger(__name__).exception("capture listener failed on %s", msg.get("type"))
 
     try:
         load_tables(Path(tables_dir))  # fail fast, in the parent, with a clear message

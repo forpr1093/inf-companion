@@ -79,10 +79,13 @@ says the tables are missing or unusable.
 ## What the page reads from the game
 
 - **Song select:** Now playing shows the title, difficulty, level and note count. Personal
-  best shows the best score, clear lamp and miss count the game displays.
-- **Result:** the app reads the score, lamp, DJ level, miss count and judgments, ready for
-  play history in a later update.
-- Not read yet: BPM and artist. They need screenshots to learn from (see below).
+  best shows the best score, clear lamp and miss count the game displays. If you scroll
+  fast and pick a song straight away, the song on screen when you leave song select is the
+  one shown.
+- **Result:** the app reads the score, lamp, DJ level, miss count and judgments, and adds
+  the play to **Recent plays**. Plays are kept in `data\companion.sqlite3`.
+- Not read yet: BPM, artist, and anything on the gameplay screen. They need screenshots
+  to learn from (see below).
 
 ## Recording screenshots
 
@@ -99,6 +102,9 @@ uv run inf-companion --record D:\inf-record
   every frame differs, so a few songs are plenty; record to a drive with space.
 - Scroll through about 10 songs on song select (different BPMs and difficulties), play a
   few, and stay on each result screen for a couple of seconds.
+- For the BPM reader, play songs with **different BPMs**, including one whose BPM changes
+  mid-song. Every gameplay screenshot so far is a 140 BPM song, so other digits can't be
+  learned yet.
 - Zip the folder and bring it back. Delete it after; it's only for calibration.
 
 ## Update

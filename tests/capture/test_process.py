@@ -138,3 +138,23 @@ def test_handle_keeps_last_chart_best_and_result():
     h.remember({"type": "result", "result": {"score": 1}})
     assert h.state()["chart"] == {"title": "x"} and h.state()["personal_best"] is None
     assert h.result == {"score": 1}
+
+
+def test_on_message_sees_every_message_and_cant_break_capture(tmp_path):
+    class Bus:
+        def __init__(self):
+            self.events = []
+
+        def publish(self, e):
+            self.events.append(e)
+
+    seen = []
+
+    def listener(msg):
+        seen.append(msg["type"])
+        raise RuntimeError("database locked")
+
+    bus = Bus()
+    start_capture("replay", tmp_path, tmp_path / "no-tables", "1P", bus, on_message=listener)
+    assert seen == ["capture_status"]
+    assert bus.events[-1]["type"] == "capture_status"

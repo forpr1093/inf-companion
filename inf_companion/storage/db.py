@@ -1,9 +1,9 @@
-"""SQLite storage for settings and controller bindings."""
+"""SQLite storage for settings, controller bindings and plays."""
 
 import json
 import sqlite3
 import threading
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from inf_companion.input.model import Binding
@@ -19,7 +19,30 @@ _MIGRATIONS = [
         updated_at TEXT NOT NULL
     );
     """,
+    """
+    CREATE TABLE plays (
+        id INTEGER PRIMARY KEY,
+        played_at TEXT NOT NULL,
+        side TEXT,
+        title TEXT,
+        difficulty TEXT NOT NULL,
+        level INTEGER,
+        notes INTEGER,
+        score INTEGER NOT NULL,
+        lamp TEXT NOT NULL,
+        dj_level TEXT,
+        miss_count INTEGER,
+        judges TEXT NOT NULL,
+        fast INTEGER,
+        slow INTEGER
+    );
+    CREATE INDEX plays_played_at ON plays (played_at);
+    """,
 ]
+
+# The same result read again within this time is the same play (e.g. the screen label
+# flickered and the result screen was read twice).
+SAME_PLAY_WINDOW = timedelta(minutes=5)
 
 
 def open_db(path: Path) -> sqlite3.Connection:
@@ -77,3 +100,40 @@ class BindingsRepo:
                 "updated_at = excluded.updated_at",
                 (binding.device_guid, binding.name, json.dumps(data["map"]), datetime.now(timezone.utc).isoformat()),
             )
+
+
+class PlaysRepo:
+    """Plays read from result screens. Rows are kept forever; the page shows the newest."""
+
+    def __init__(self, conn: sqlite3.Connection):
+        self._conn = conn
+        self._lock = threading.Lock()
+
+    def add(self, result: dict, played_at: datetime | None = None) -> bool:
+        """Store a result. False when it repeats the last stored play (not a new play)."""
+        played_at = played_at or datetime.now(timezone.utc)
+        judges = json.dumps(result.get("judges") or {}, sort_keys=True)
+        key = (result.get("title"), result.get("difficulty"), result.get("score"), judges)
+        with self._lock, self._conn:
+            last = self._conn.execute(
+                "SELECT title, difficulty, score, judges, played_at FROM plays ORDER BY id DESC LIMIT 1").fetchone()
+            if last is not None and tuple(last[:4]) == key and \
+                    played_at - datetime.fromisoformat(last[4]) < SAME_PLAY_WINDOW:
+                return False
+            self._conn.execute(
+                "INSERT INTO plays (played_at, side, title, difficulty, level, notes, score, lamp, dj_level, "
+                "miss_count, judges, fast, slow) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (played_at.isoformat(), result.get("side"), result.get("title"), result["difficulty"],
+                 result.get("level"), result.get("notes"), result["score"], result["cleartype"],
+                 result.get("djlevel"), result.get("misscount"), judges, result.get("fast"), result.get("slow")),
+            )
+        return True
+
+    def recent(self, limit: int = 20) -> list[dict]:
+        """The newest plays, shaped for the page's Recent plays panel."""
+        with self._lock:
+            rows = self._conn.execute(
+                "SELECT title, difficulty, level, score, notes, played_at FROM plays ORDER BY id DESC LIMIT ?",
+                (limit,)).fetchall()
+        return [{"title": t or "Unknown title", "difficulty": d, "level": lv, "score": sc, "notes": n,
+                 "option": None, "played_at": at} for t, d, lv, sc, n, at in rows]

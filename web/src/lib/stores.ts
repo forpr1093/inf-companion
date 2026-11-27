@@ -44,6 +44,7 @@ export function applyEvent(e: ServerEvent): void {
       screen.set(e.screen ?? null); captureStatus.set(e.capture_status ?? { state: "off" });
       // Only a real chart replaces what's shown (a null keeps demo data on ?demo pages).
       if (e.chart) { nowPlaying.set(e.chart); personalBest.set(e.personal_best ?? null); }
+      if (e.recent_plays?.length) recentPlays.set(e.recent_plays);
       break;
     case "settings": settings.set(e.settings); break;
     case "devices": devices.set(e.devices); break;

@@ -66,7 +66,7 @@ def test_binding_json_round_trip():
 def test_reopen_does_not_rerun_migrations(tmp_path):
     open_db(tmp_path / "c.sqlite3").close()
     conn = open_db(tmp_path / "c.sqlite3")
-    assert conn.execute("PRAGMA user_version").fetchone()[0] == 1
+    assert conn.execute("PRAGMA user_version").fetchone()[0] == 2
 
 
 def test_model_basics():
@@ -84,3 +84,45 @@ def test_model_basics():
 def test_validation_messages_are_plain(patch, message):
     with pytest.raises(ValueError, match=message.replace(".", r"\.")):
         validate_settings_patch(patch)
+
+
+def _result(score=1228, title="Mermaid girl", pgreat=485):
+    return {"side": "1P", "playmode": "SP", "title": title, "difficulty": "HYPER", "level": 8, "notes": 856,
+            "cleartype": "CLEAR", "djlevel": "A", "score": score, "misscount": 14,
+            "judges": {"pgreat": pgreat, "great": score - 2 * pgreat, "good": 100, "bad": 4, "poor": 10},
+            "fast": 120, "slow": 80}
+
+
+def test_plays_recent_newest_first_and_persist(tmp_path):
+    from datetime import datetime, timedelta, timezone
+    from inf_companion.storage.db import PlaysRepo
+    t0 = datetime(2026, 11, 27, 12, 0, tzinfo=timezone.utc)
+    plays = PlaysRepo(open_db(tmp_path / "c.sqlite3"))
+    assert plays.add(_result(1228), played_at=t0)
+    assert plays.add(_result(1300, title=None), played_at=t0 + timedelta(minutes=3))
+    again = PlaysRepo(open_db(tmp_path / "c.sqlite3")).recent()
+    assert again == [
+        {"title": "Unknown title", "difficulty": "HYPER", "level": 8, "score": 1300, "notes": 856, "option": None,
+         "played_at": (t0 + timedelta(minutes=3)).isoformat()},
+        {"title": "Mermaid girl", "difficulty": "HYPER", "level": 8, "score": 1228, "notes": 856, "option": None,
+         "played_at": t0.isoformat()},
+    ]
+
+
+def test_plays_same_result_twice_in_a_row_is_stored_once(tmp_path):
+    from datetime import datetime, timedelta, timezone
+    from inf_companion.storage.db import PlaysRepo
+    t0 = datetime(2026, 11, 27, 12, 0, tzinfo=timezone.utc)
+    plays = PlaysRepo(open_db(tmp_path / "c.sqlite3"))
+    assert plays.add(_result(), played_at=t0)
+    assert not plays.add(_result(), played_at=t0 + timedelta(seconds=20))
+    assert plays.add(_result(), played_at=t0 + timedelta(minutes=10))  # replayed later: a new play
+    assert len(plays.recent()) == 2
+
+
+def test_plays_recent_limit(tmp_path):
+    from inf_companion.storage.db import PlaysRepo
+    plays = PlaysRepo(open_db(tmp_path / "c.sqlite3"))
+    for i in range(5):
+        plays.add(_result(1000 + 2 * i))
+    assert [p["score"] for p in plays.recent(limit=3)] == [1008, 1006, 1004]

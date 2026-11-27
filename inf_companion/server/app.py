@@ -7,6 +7,7 @@ import os
 import tempfile
 from dataclasses import dataclass, field
 from pathlib import Path
+from collections.abc import Callable
 from typing import Any, Protocol
 
 from starlette.applications import Starlette
@@ -19,7 +20,7 @@ from starlette.websockets import WebSocket, WebSocketDisconnect
 import inf_companion
 from inf_companion.events import EventBus, make_event
 from inf_companion.input.model import TARGETS, DeviceInfo
-from inf_companion.storage.db import BindingsRepo, SettingsRepo
+from inf_companion.storage.db import BindingsRepo, PlaysRepo, SettingsRepo
 
 GIF_MAX_BYTES = 20 * 1024 * 1024
 GIF_NAME = "loop.gif"
@@ -42,7 +43,16 @@ class AppContext:
     static_dir: Path | None
     input: InputLike | None = None
     capture: Any = None  # CaptureHandle-like: .state() -> {"screen", "capture_status"}
+    plays: PlaysRepo | None = None
     gif_version: int = field(default=0)
+
+
+def record_plays(ctx: AppContext) -> Callable[[dict], None]:
+    """A capture listener: store each result as a play and send the new Recent plays list."""
+    def on_message(msg: dict) -> None:
+        if msg.get("type") == "result" and ctx.plays is not None and ctx.plays.add(msg["result"]):
+            ctx.bus.publish(make_event("recent_plays", plays=ctx.plays.recent()))
+    return on_message
 
 
 def create_app(ctx: AppContext) -> Starlette:
@@ -61,6 +71,7 @@ def create_app(ctx: AppContext) -> Starlette:
             counts=ctx.input.counts() if ctx.input else {t: 0 for t in TARGETS},
             binding=ctx.input.binding_state() if ctx.input else None,
             gif_version=ctx.gif_version,
+            recent_plays=ctx.plays.recent() if ctx.plays else [],
             **({"screen": None, "capture_status": {"state": "off"}, "chart": None, "personal_best": None}
                | (ctx.capture.state() if ctx.capture else {})),
         )

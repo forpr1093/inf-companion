@@ -177,3 +177,23 @@ def test_hello_carries_chart(ctx):
     with TestClient(create_app(ctx)) as c, c.websocket_connect("/ws") as ws:
         h = ws.receive_json()
         assert h["chart"] == {"title": "Mermaid girl"} and h["personal_best"] == {"score": 1437}
+
+
+def test_results_become_recent_plays(ctx):
+    from starlette.testclient import TestClient
+    from inf_companion.server.app import create_app, record_plays
+    from inf_companion.storage.db import PlaysRepo, open_db
+    ctx.plays = PlaysRepo(open_db(ctx.data_dir / "c.sqlite3"))
+    on_message = record_plays(ctx)
+    result = {"side": "1P", "playmode": "SP", "title": "Mermaid girl", "difficulty": "HYPER", "level": 8,
+              "notes": 856, "cleartype": "CLEAR", "score": 1228,
+              "judges": {"pgreat": 485, "great": 258, "good": 100, "bad": 4, "poor": 10}}
+    with TestClient(create_app(ctx)) as c, c.websocket_connect("/ws") as ws:
+        assert ws.receive_json()["recent_plays"] == []
+        on_message({"type": "screen", "screen": "result"})
+        on_message({"type": "result", "result": result})
+        on_message({"type": "result", "result": result})  # the same result again: not a new play
+        e = ws.receive_json()
+        assert e["type"] == "recent_plays" and [p["score"] for p in e["plays"]] == [1228]
+    with TestClient(create_app(ctx)) as c, c.websocket_connect("/ws") as ws:
+        assert [p["title"] for p in ws.receive_json()["recent_plays"]] == ["Mermaid girl"]
